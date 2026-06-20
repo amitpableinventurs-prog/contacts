@@ -1,0 +1,2 @@
+<div <?php echo e($attributes->class(['-mx-1 my-1 h-px bg-border'])); ?>></div>
+<?php /**PATH D:\xampp_lite\xampp_lite_8_3\www\laracontact\resources\views/components/ui/dropdown-menu-separator.blade.php ENDPATH**/ ?>

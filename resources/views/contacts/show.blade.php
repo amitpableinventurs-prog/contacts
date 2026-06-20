@@ -1,0 +1,419 @@
+<x-app-layout>
+    <x-slot:header>Contacts / {{ $contact->name }}</x-slot:header>
+
+    <div class="space-y-4">
+
+        @if (($duplicateCount ?? 0) > 0)
+            <x-ui.card class="border-warning/40 bg-warning/5">
+                <x-ui.card-content class="p-4 flex items-center gap-3 text-sm">
+                    <svg class="h-4 w-4 shrink-0 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+                    <div class="flex-1">
+                        <span class="font-medium">{{ $duplicateCount }} potential {{ \Illuminate\Support\Str::plural('duplicate', $duplicateCount) }}</span>
+                        <span class="text-muted-foreground">— matching email or phone.</span>
+                    </div>
+                    <a href="{{ route('contacts.merge', $contact) }}"><x-ui.button size="sm" variant="outline">Review &amp; merge</x-ui.button></a>
+                </x-ui.card-content>
+            </x-ui.card>
+        @endif
+
+        {{-- Header --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-sm text-muted-foreground">
+                <a href="{{ route('contacts.index') }}" class="hover:text-foreground">Contacts</a>
+                <span>/</span>
+                <span class="text-foreground">{{ $contact->name }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                @if (($contact->phone ?: $contact->number) && !auth()->user()->isClerk())
+                    <form method="POST" action="{{ route('calls.log') }}" class="inline">
+                        @csrf
+                        <input type="hidden" name="contact_id" value="{{ $contact->id }}" />
+                        <x-ui.button variant="outline" size="sm" type="submit">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            Call
+                        </x-ui.button>
+                    </form>
+                    <a href="{{ route('sms.show', $contact) }}">
+                        <x-ui.button variant="outline" size="sm">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                            SMS
+                        </x-ui.button>
+                    </a>
+                @endif
+                @can('update', $contact)
+                    <a href="{{ route('contacts.edit', $contact) }}"><x-ui.button size="sm">Edit</x-ui.button></a>
+                @endcan
+                <x-ui.dropdown-menu align="end">
+                    <x-slot:trigger>
+                        <button class="rounded-md border border-input bg-background h-9 px-3 hover:bg-accent">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg>
+                        </button>
+                    </x-slot:trigger>
+                    @can('update', $contact)
+                        @if ($contact->status !== 'suspended')
+                            <form method="POST" action="{{ route('contacts.suspend', $contact) }}">
+                                @csrf
+                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-orange-600">Suspend</x-ui.dropdown-menu-item>
+                            </form>
+                        @endif
+                        @if ($contact->status !== 'banned')
+                            <form method="POST" action="{{ route('contacts.ban', $contact) }}">
+                                @csrf
+                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-600">Ban</x-ui.dropdown-menu-item>
+                            </form>
+                        @endif
+                        @if ($contact->status !== 'active')
+                            <form method="POST" action="{{ route('contacts.update', $contact) }}">
+                                @csrf @method('PUT')
+                                <input type="hidden" name="name" value="{{ $contact->name }}" />
+                                <input type="hidden" name="status" value="active" />
+                                <x-ui.dropdown-menu-item as="button" type="submit">Reactivate</x-ui.dropdown-menu-item>
+                            </form>
+                        @endif
+                        <x-ui.dropdown-menu-separator />
+                    @endcan
+                    @can('delete', $contact)
+                        <form method="POST" action="{{ route('contacts.destroy', $contact) }}" onsubmit="return confirm('Move {{ addslashes($contact->name) }} to trash?')">
+                            @csrf @method('DELETE')
+                            <x-ui.dropdown-menu-item as="button" type="submit" destructive>🗑 Move to trash</x-ui.dropdown-menu-item>
+                        </form>
+                    @endcan
+                </x-ui.dropdown-menu>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {{-- Left rail --}}
+            <x-ui.card class="lg:col-span-1 h-fit">
+                <x-ui.card-content class="p-6 space-y-4">
+                    <div class="flex flex-col items-center text-center">
+                        <x-ui.avatar :name="$contact->name" :src="$contact->photo ? asset('storage/'.$contact->photo) : null" size="xl" />
+                        <h2 class="mt-3 text-lg font-semibold">{{ $contact->name }}</h2>
+                        @if ($contact->job_title || $contact->company)
+                            <p class="text-sm text-muted-foreground">{{ collect([$contact->job_title, $contact->company])->filter()->join(' · ') }}</p>
+                        @endif
+
+                        {{-- Status badge --}}
+                        @if ($contact->status === 'suspended')
+                            <span class="mt-1 inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">Suspended</span>
+                        @elseif ($contact->status === 'banned')
+                            <span class="mt-1 inline-flex items-center rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">Banned</span>
+                        @endif
+
+                        <div class="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                            @if ($contact->lifecycle_stage)
+                                <x-ui.badge variant="secondary">{{ ucfirst($contact->lifecycle_stage) }}</x-ui.badge>
+                            @endif
+                            @if ($contact->group)
+                                <x-ui.badge variant="outline">
+                                    <span class="h-1.5 w-1.5 rounded-full mr-1" style="background:{{ $contact->group->color ?: '#a855f7' }}"></span>
+                                    {{ $contact->group->name }}
+                                </x-ui.badge>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Star rating display + quick rate --}}
+                    <div class="text-center">
+                        @php $r = (float)($contact->rating ?? 0); @endphp
+                        <div class="flex items-center justify-center gap-0.5 mb-1">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <svg class="h-5 w-5 {{ $i <= $r ? 'text-yellow-400 fill-yellow-400' : 'text-muted-foreground fill-transparent' }}" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                                </svg>
+                            @endfor
+                        </div>
+                        <p class="text-xs text-muted-foreground">{{ $r > 0 ? number_format($r, 1).'/5' : 'Not rated' }}</p>
+                    </div>
+
+                    <x-ui.separator />
+
+                    <dl class="space-y-3 text-sm">
+                        @if ($contact->email)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Email</dt>
+                            <dd><a href="mailto:{{ $contact->email }}" class="hover:underline">{{ $contact->email }}</a></dd></div>
+                        @endif
+                        @php $phone = $contact->phone ?: $contact->number; @endphp
+                        @if ($phone)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Phone</dt><dd>{{ $phone }}</dd></div>
+                        @endif
+                        @if ($contact->website)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Website</dt>
+                            <dd><a href="{{ $contact->website }}" target="_blank" rel="noopener" class="hover:underline truncate block">{{ $contact->website }}</a></dd></div>
+                        @endif
+                        @if ($contact->address)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Address</dt><dd>{{ $contact->address }}</dd></div>
+                        @endif
+                        @if ($contact->city)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">City</dt><dd>{{ $contact->city }}</dd></div>
+                        @endif
+                        @if ($contact->birthday)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Birthday</dt><dd>{{ $contact->birthday->format('M j, Y') }}</dd></div>
+                        @endif
+                        <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Last contacted</dt><dd>{{ $contact->last_contacted_at?->diffForHumans() ?? '—' }}</dd></div>
+                        @if ($contact->owner)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Owner</dt><dd>{{ $contact->owner->name }}</dd></div>
+                        @endif
+                    </dl>
+
+                    @if ($contact->tags->isNotEmpty())
+                        <x-ui.separator />
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground mb-2">Tags</div>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach ($contact->tags as $tag)
+                                    <x-ui.badge variant="outline">{{ $tag->name }}</x-ui.badge>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($contact->facebook || $contact->twitter || $contact->linkedin)
+                        <x-ui.separator />
+                        <div>
+                            <div class="text-xs uppercase tracking-wide text-muted-foreground mb-2">Social</div>
+                            <div class="space-y-1 text-sm">
+                                @if ($contact->twitter)  <div>🐦 {{ $contact->twitter }}</div> @endif
+                                @if ($contact->linkedin) <div>💼 {{ $contact->linkedin }}</div> @endif
+                                @if ($contact->facebook) <div>📘 {{ $contact->facebook }}</div> @endif
+                            </div>
+                        </div>
+                    @endif
+                </x-ui.card-content>
+            </x-ui.card>
+
+            {{-- Right column tabs --}}
+            <div class="lg:col-span-2">
+                <x-ui.tabs default="activity">
+                    <x-ui.tabs-list>
+                        <x-ui.tabs-trigger value="activity">Activity</x-ui.tabs-trigger>
+                        <x-ui.tabs-trigger value="notes">Notes ({{ $contact->contactNotes->count() }})</x-ui.tabs-trigger>
+                        <x-ui.tabs-trigger value="description">Description</x-ui.tabs-trigger>
+                        <x-ui.tabs-trigger value="files">Files ({{ $contact->files->count() }})</x-ui.tabs-trigger>
+                        <x-ui.tabs-trigger value="gallery">Gallery ({{ $contact->galleryImages->count() }})</x-ui.tabs-trigger>
+                        <x-ui.tabs-trigger value="custom">Custom fields</x-ui.tabs-trigger>
+                    </x-ui.tabs-list>
+
+                    {{-- Activity --}}
+                    <x-ui.tabs-content value="activity">
+                        <x-ui.card>
+                            <x-ui.card-content class="p-0">
+                                @php $combined = $activity->concat($emails)->sortByDesc(fn ($i) => $i->sent_at ?? $i->created_at); @endphp
+                                @if ($combined->isEmpty())
+                                    <p class="text-sm text-muted-foreground py-12 text-center">No activity yet.</p>
+                                @else
+                                    <ul class="divide-y">
+                                        @foreach ($combined as $item)
+                                            @php
+                                                $isMessage = $item instanceof \App\Models\Message;
+                                                $type = $isMessage ? $item->channel : 'email';
+                                                $verb = match(true) {
+                                                    $type === 'sms' && ($item->direction ?? '') === 'outbound' => 'Sent SMS',
+                                                    $type === 'sms' => 'Received SMS',
+                                                    $type === 'voice' => 'Called',
+                                                    default => 'Emailed',
+                                                };
+                                                $preview = $isMessage ? $item->body : $item->subject;
+                                                $when = $item->sent_at ?? $item->created_at;
+                                            @endphp
+                                            <li class="flex items-start gap-3 p-4">
+                                                <div class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-xs font-medium">
+                                                    {{ $type === 'sms' ? 'SMS' : ($type === 'voice' ? '☎' : '✉') }}
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-baseline justify-between gap-3">
+                                                        <p class="text-sm font-medium">{{ $verb }}</p>
+                                                        <span class="text-xs text-muted-foreground shrink-0">{{ $when?->diffForHumans() }}</span>
+                                                    </div>
+                                                    @if ($preview)
+                                                        <p class="text-sm text-muted-foreground truncate">{{ $preview }}</p>
+                                                    @endif
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </x-ui.card-content>
+                        </x-ui.card>
+                    </x-ui.tabs-content>
+
+                    {{-- Notes --}}
+                    <x-ui.tabs-content value="notes">
+                        <div class="space-y-3">
+                            {{-- Add note form --}}
+                            <x-ui.card>
+                                <x-ui.card-header><x-ui.card-title>Add note</x-ui.card-title></x-ui.card-header>
+                                <x-ui.card-content>
+                                    <form method="POST" action="{{ route('contacts.notes.store', $contact) }}" class="space-y-3">
+                                        @csrf
+                                        <x-ui.textarea name="note_html" rows="3" placeholder="Add a note about this contact..." required></x-ui.textarea>
+                                        @error('note_html') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                                        <x-ui.button type="submit" size="sm">Save note</x-ui.button>
+                                    </form>
+                                </x-ui.card-content>
+                            </x-ui.card>
+
+                            {{-- Quick notes field (plain text column) --}}
+                            @if ($contact->getAttributes()['notes'] ?? null)
+                                <x-ui.card>
+                                    <x-ui.card-header><x-ui.card-title class="text-sm">Quick notes</x-ui.card-title></x-ui.card-header>
+                                    <x-ui.card-content>
+                                        <p class="text-sm whitespace-pre-line leading-relaxed">{{ $contact->getAttributes()['notes'] }}</p>
+                                    </x-ui.card-content>
+                                </x-ui.card>
+                            @endif
+
+                            {{-- Relational notes --}}
+                            @forelse ($contact->contactNotes->sortByDesc('created_at') as $note)
+                                <x-ui.card>
+                                    <x-ui.card-content class="p-4">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                                                <x-ui.avatar :name="$note->author?->name ?? 'User'" size="xs" />
+                                                <span>{{ $note->author?->name ?? 'Unknown' }}</span>
+                                                <span>·</span>
+                                                <span>{{ $note->created_at->diffForHumans() }}</span>
+                                            </div>
+                                            @can('update', $contact)
+                                                <form method="POST" action="{{ route('contacts.notes.destroy', [$contact, $note]) }}">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="text-muted-foreground hover:text-destructive" title="Delete note">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                    </button>
+                                                </form>
+                                            @endcan
+                                        </div>
+                                        <p class="text-sm whitespace-pre-line">{!! nl2br(e($note->note_html)) !!}</p>
+                                    </x-ui.card-content>
+                                </x-ui.card>
+                            @empty
+                                <p class="text-sm text-muted-foreground text-center py-8">No notes yet.</p>
+                            @endforelse
+                        </div>
+                    </x-ui.tabs-content>
+
+                    {{-- Description --}}
+                    <x-ui.tabs-content value="description">
+                        <x-ui.card>
+                            <x-ui.card-content class="p-6">
+                                @if ($contact->description_html)
+                                    <div class="prose prose-sm max-w-none">{!! $contact->description_html !!}</div>
+                                @else
+                                    <p class="text-sm text-muted-foreground italic">No description added. Use the Edit form to add one.</p>
+                                @endif
+                            </x-ui.card-content>
+                        </x-ui.card>
+                    </x-ui.tabs-content>
+
+                    {{-- Files --}}
+                    <x-ui.tabs-content value="files">
+                        <div class="space-y-3">
+                            @can('update', $contact)
+                                <x-ui.card>
+                                    <x-ui.card-header><x-ui.card-title>Upload file</x-ui.card-title></x-ui.card-header>
+                                    <x-ui.card-content>
+                                        <form method="POST" action="{{ route('contacts.files.store', $contact) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3">
+                                            @csrf
+                                            <div class="flex-1 space-y-1.5">
+                                                <input type="file" name="file" required class="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent" />
+                                                @error('file') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                                            </div>
+                                            <x-ui.button type="submit" size="sm">Upload</x-ui.button>
+                                        </form>
+                                    </x-ui.card-content>
+                                </x-ui.card>
+                            @endcan
+
+                            @forelse ($contact->files->sortByDesc('created_at') as $file)
+                                <x-ui.card>
+                                    <x-ui.card-content class="p-4 flex items-center gap-3">
+                                        <div class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted">
+                                            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium truncate">{{ $file->file_name }}</p>
+                                            <p class="text-xs text-muted-foreground">{{ number_format($file->size_bytes / 1024, 1) }} KB · {{ $file->created_at->diffForHumans() }}</p>
+                                        </div>
+                                        <a href="{{ asset('storage/'.$file->file_path) }}" download="{{ $file->file_name }}"
+                                           class="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded border border-input hover:bg-accent">Download</a>
+                                        @can('update', $contact)
+                                            <form method="POST" action="{{ route('contacts.files.destroy', [$contact, $file]) }}" onsubmit="return confirm('Delete file?')">
+                                                @csrf @method('DELETE')
+                                                <button type="submit" class="text-muted-foreground hover:text-destructive">
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        @endcan
+                                    </x-ui.card-content>
+                                </x-ui.card>
+                            @empty
+                                <p class="text-sm text-muted-foreground text-center py-8">No files uploaded.</p>
+                            @endforelse
+                        </div>
+                    </x-ui.tabs-content>
+
+                    {{-- Gallery --}}
+                    <x-ui.tabs-content value="gallery">
+                        <div class="space-y-3">
+                            @can('update', $contact)
+                                <x-ui.card>
+                                    <x-ui.card-header><x-ui.card-title>Upload images</x-ui.card-title></x-ui.card-header>
+                                    <x-ui.card-content>
+                                        <form method="POST" action="{{ route('contacts.gallery.store', $contact) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3">
+                                            @csrf
+                                            <div class="flex-1 space-y-1.5">
+                                                <input type="file" name="images[]" multiple accept="image/*" required class="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent" />
+                                                @error('images') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                                            </div>
+                                            <x-ui.button type="submit" size="sm">Upload</x-ui.button>
+                                        </form>
+                                    </x-ui.card-content>
+                                </x-ui.card>
+                            @endcan
+
+                            @if ($contact->galleryImages->isNotEmpty())
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    @foreach ($contact->galleryImages->sortByDesc('created_at') as $image)
+                                        <div class="relative group rounded-lg overflow-hidden border border-input bg-muted aspect-square">
+                                            <img src="{{ asset('storage/'.$image->image_path) }}" alt="{{ $image->image_name }}" class="w-full h-full object-cover" />
+                                            @can('update', $contact)
+                                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <form method="POST" action="{{ route('contacts.gallery.destroy', [$contact, $image]) }}" onsubmit="return confirm('Delete image?')">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="bg-destructive text-destructive-foreground rounded-md px-3 py-1.5 text-xs font-medium">Delete</button>
+                                                    </form>
+                                                </div>
+                                            @endcan
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-muted-foreground text-center py-8">No images in gallery.</p>
+                            @endif
+                        </div>
+                    </x-ui.tabs-content>
+
+                    {{-- Custom fields --}}
+                    <x-ui.tabs-content value="custom">
+                        <x-ui.card>
+                            <x-ui.card-content class="p-6">
+                                @if (!empty($contact->custom_fields))
+                                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                                        @foreach ($contact->custom_fields as $key => $value)
+                                            <div>
+                                                <dt class="text-xs uppercase tracking-wide text-muted-foreground">{{ $key }}</dt>
+                                                <dd>{{ is_scalar($value) ? $value : json_encode($value) }}</dd>
+                                            </div>
+                                        @endforeach
+                                    </dl>
+                                @else
+                                    <p class="text-sm text-muted-foreground italic">No custom fields set.</p>
+                                @endif
+                            </x-ui.card-content>
+                        </x-ui.card>
+                    </x-ui.tabs-content>
+                </x-ui.tabs>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LaraContact — User Guide</title>
+<style>
+:root {
+    --bg: #ffffff;
+    --bg-soft: #f8f8fb;
+    --fg: #18181b;
+    --fg-muted: #71717a;
+    --border: #e4e4e7;
+    --primary: #7c3aed;
+    --primary-soft: #f5f3ff;
+    --code-bg: #f4f4f5;
+    --code-fg: #18181b;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 1px 6px rgba(0,0,0,.04);
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #09090b;
+        --bg-soft: #131316;
+        --fg: #fafafa;
+        --fg-muted: #a1a1aa;
+        --border: #27272a;
+        --primary: #a78bfa;
+        --primary-soft: rgba(167,139,250,.08);
+        --code-bg: #1c1c20;
+        --code-fg: #e4e4e7;
+    }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body { margin: 0; font-family: var(--sans); font-size: 15px; line-height: 1.65; background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; }
+
+header.topbar { position: sticky; top: 0; z-index: 50; height: 56px; background: color-mix(in srgb, var(--bg) 80%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; }
+.brand .logo { width: 28px; height: 28px; border-radius: 8px; background: var(--primary); color: white; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.topbar .nav { margin-left: auto; display: flex; align-items: center; gap: 4px; font-size: 13px; }
+.topbar .nav a { padding: 6px 12px; border-radius: 6px; color: var(--fg-muted); text-decoration: none; transition: background .15s, color .15s; }
+.topbar .nav a:hover { color: var(--fg); background: var(--primary-soft); }
+.topbar .nav a.active { color: var(--fg); background: var(--primary-soft); }
+
+.layout { display: grid; grid-template-columns: 240px 1fr; max-width: 1200px; margin: 0 auto; gap: 48px; padding: 32px 24px; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 16px; padding: 16px; } aside.toc { position: static; max-height: none; border: 1px solid var(--border); border-radius: 12px; padding: 16px; } .topbar .nav { display: none; } }
+
+aside.toc { position: sticky; top: 80px; align-self: start; max-height: calc(100vh - 100px); overflow-y: auto; font-size: 13px; }
+aside.toc .toc-title { text-transform: uppercase; letter-spacing: .08em; font-size: 11px; font-weight: 600; color: var(--fg-muted); margin-bottom: 12px; }
+aside.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc; }
+aside.toc li { counter-increment: toc; }
+aside.toc a { display: block; padding: 4px 8px; margin: 1px 0; color: var(--fg-muted); text-decoration: none; border-radius: 6px; transition: background .15s, color .15s; }
+aside.toc a:hover { background: var(--primary-soft); color: var(--fg); }
+aside.toc a::before { content: counter(toc) ". "; opacity: .5; }
+
+main { min-width: 0; }
+.hero { margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+.hero h1 { font-size: 36px; line-height: 1.15; margin: 0 0 12px; letter-spacing: -.02em; }
+.hero .tagline { font-size: 17px; color: var(--fg-muted); margin: 0; max-width: 56ch; }
+.hero .pills { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-soft); font-size: 12px; color: var(--fg-muted); }
+
+h2 { font-size: 24px; margin: 48px 0 16px; letter-spacing: -.01em; scroll-margin-top: 80px; }
+h2 .num { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin-right: 12px; background: var(--primary); color: white; border-radius: 8px; font-size: 14px; font-weight: 600; vertical-align: 2px; }
+h3 { font-size: 17px; margin: 28px 0 10px; }
+h4 { font-size: 14px; margin: 18px 0 6px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .05em; }
+p { margin: 0 0 14px; }
+ul, ol { padding-left: 22px; margin: 0 0 16px; }
+li { margin: 4px 0; }
+a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { text-decoration: none; }
+
+code { font-family: var(--mono); font-size: 13px; background: var(--code-bg); color: var(--code-fg); padding: 1px 6px; border-radius: 4px; }
+pre { font-family: var(--mono); font-size: 13px; background: var(--code-bg); color: var(--code-fg); padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border); overflow-x: auto; line-height: 1.55; margin: 12px 0 16px; }
+pre code { background: transparent; padding: 0; }
+
+.table-wrap { overflow-x: auto; margin: 12px 0 18px; border: 1px solid var(--border); border-radius: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--bg-soft); font-weight: 600; font-size: 13px; }
+tr:last-child td { border-bottom: none; }
+
+.callout { border: 1px solid var(--border); border-left: 3px solid var(--primary); background: var(--primary-soft); padding: 12px 14px; border-radius: 6px; margin: 14px 0; font-size: 14px; }
+.callout strong { display: block; margin-bottom: 4px; }
+
+kbd { display: inline-block; padding: 2px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; background: var(--bg-soft); font-family: var(--mono); font-size: 11px; color: var(--fg); line-height: 1; }
+
+@media print { header.topbar, aside.toc { display: none; } .layout { display: block; padding: 0; max-width: none; } body { font-size: 12pt; line-height: 1.5; color: black; background: white; } pre { page-break-inside: avoid; } a { color: inherit; text-decoration: none; } a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 10pt; color: #666; } h2 { page-break-after: avoid; } }
+
+footer { border-top: 1px solid var(--border); margin-top: 64px; padding-top: 24px; font-size: 13px; color: var(--fg-muted); text-align: center; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="brand"><div class="logo">L</div>LaraContact <span style="font-weight:400;color:var(--fg-muted)">&middot; Documentation</span></div>
+    <nav class="nav">
+        <a href="index.html">Installation</a>
+        <a href="user-guide.html" class="active">User Guide</a>
+    </nav>
+</header>
+
+<div class="layout">
+
+<aside class="toc">
+    <div class="toc-title">On this page</div>
+    <ol>
+        <li><a href="#sign-in">Signing in</a></li>
+        <li><a href="#dashboard">The dashboard</a></li>
+        <li><a href="#contacts">Working with contacts</a></li>
+        <li><a href="#import">Importing from CSV</a></li>
+        <li><a href="#comms">Communication</a></li>
+        <li><a href="#bulk-sends">Bulk sends</a></li>
+        <li><a href="#ai">AI-assisted workflows</a></li>
+        <li><a href="#reminders">Reminders &amp; follow-ups</a></li>
+        <li><a href="#workspace">Workspaces &amp; invitations</a></li>
+        <li><a href="#library">Library: Groups &amp; Tags</a></li>
+        <li><a href="#audit">Audit log</a></li>
+        <li><a href="#two-factor">Two-factor authentication</a></li>
+        <li><a href="#settings">Settings reference</a></li>
+        <li><a href="#api">Public JSON API</a></li>
+        <li><a href="#shortcuts">Keyboard shortcuts</a></li>
+        <li><a href="#faq">Frequently asked questions</a></li>
+    </ol>
+</aside>
+
+<main>
+
+<div class="hero">
+    <h1>User Guide</h1>
+    <p class="tagline">
+        Walks through every feature in LaraContact from the user's perspective. If you're a developer installing the app, see the <a href="index.html">Installation Guide</a> first.
+    </p>
+    <div class="pills">
+        <span class="pill">Contacts</span>
+        <span class="pill">Two-way SMS</span>
+        <span class="pill">Calls</span>
+        <span class="pill">Email + tracking</span>
+        <span class="pill">AI</span>
+        <span class="pill">Reminders</span>
+        <span class="pill">Teams</span>
+    </div>
+</div>
+
+<h2 id="sign-in"><span class="num">1</span>Signing in</h2>
+<ul>
+    <li>Navigate to your install URL.</li>
+    <li>The landing page has <strong>Sign in</strong> and <strong>Get started</strong> buttons.</li>
+    <li>Registering creates your <strong>personal workspace</strong> automatically — there's no separate "create company" step.</li>
+    <li>If your admin has disabled public registration, you'll only see <strong>Sign in</strong>. You'll need an invitation from a workspace owner.</li>
+</ul>
+<p><strong>Forgot your password?</strong> Click <em>Forgot?</em> on the login page. A reset link is emailed to you (provided mail is configured).</p>
+
+<h2 id="dashboard"><span class="num">2</span>The dashboard</h2>
+<p>The dashboard is your daily home. Top to bottom:</p>
+<ul>
+    <li><strong>🚀 Getting started checklist</strong> — A 6-step onboarding card with progress bar. Each step links you to the relevant page. Dismiss it once you're set up.</li>
+    <li><strong>Hero strip</strong> — Greeting + quick-action buttons (Add contact, Compose email, Import, Template).</li>
+    <li><strong>KPI cards</strong> — Contacts, Messages, Calls, Emails — with a month-over-month delta chip (green up, red down, grey flat).</li>
+    <li><strong>Pipeline</strong> — Contacts grouped by lifecycle stage (lead, prospect, customer, partner, vendor) with progress bars.</li>
+    <li><strong>Recent activity</strong> — A unified feed of SMS, WhatsApp, calls, and emails.</li>
+    <li><strong>Today's reminders</strong> — Top 3 due, with an overdue counter.</li>
+    <li><strong>🔥 Hot prospects</strong> — Contacts auto-filtered by tags like <code>vip</code>, <code>hot</code>, <code>enterprise</code>, <code>follow-up</code>.</li>
+    <li><strong>🎂 Birthdays</strong> — Upcoming contact birthdays.</li>
+</ul>
+
+<h2 id="contacts"><span class="num">3</span>Working with contacts</h2>
+
+<h3>3.1 Adding a contact</h3>
+<ol>
+    <li><strong>Manually:</strong> Click <strong>Add contact</strong> on the dashboard or <code>/contacts</code>. Fill in the form. Only <strong>Name</strong> is required.</li>
+    <li><strong>From a paste:</strong> On the create page, paste an email signature, LinkedIn snippet, or business card text into the <strong>AI-assisted fill</strong> box and click <strong>Suggest fields</strong>. The form auto-populates name, email, phone, company, job title, website, and LinkedIn.</li>
+    <li><strong>From CSV:</strong> See <a href="#import">§4 Importing from CSV</a>.</li>
+</ol>
+
+<h3>3.2 The contact form fields</h3>
+<ul>
+    <li><strong>Basics:</strong> name (required), email, phone, company, job title, website, address</li>
+    <li><strong>Lifecycle stage:</strong> lead / prospect / customer / partner / vendor — drives the dashboard pipeline view</li>
+    <li><strong>Birthday:</strong> shown on the dashboard birthday card</li>
+    <li><strong>Group:</strong> contacts belong to one group (Customers, Leads, etc.)</li>
+    <li><strong>Tags:</strong> many-to-many labels (VIP, follow-up, etc.). Click <strong>✨ Suggest from context</strong> to have AI propose tags based on the contact's notes + company + title.</li>
+    <li><strong>Social:</strong> optional Twitter, LinkedIn, Facebook handles</li>
+    <li><strong>Notes:</strong> free-text scratchpad</li>
+    <li><strong>Custom fields:</strong> per-contact key/value pairs. Click <strong>Add field</strong> to create a new row (e.g. <em>"Birthday gift idea" → "Coffee tour"</em>).</li>
+</ul>
+
+<h3>3.3 Viewing a contact</h3>
+<p>Open any contact to see:</p>
+<ul>
+    <li><strong>Left rail:</strong> avatar, name, title, company, lifecycle badge, group, key contact details, tag chips.</li>
+    <li><strong>Tabs:</strong>
+        <ul>
+            <li><strong>Activity</strong> — chronological feed of all SMS, WhatsApp, calls, and emails with this contact</li>
+            <li><strong>Notes</strong> — the free-text notes you wrote</li>
+            <li><strong>Custom fields</strong> — your custom key/value pairs</li>
+        </ul>
+    </li>
+    <li><strong>Action bar (top right):</strong> Call (logs a call entry), SMS (opens the message thread), Edit, and a <strong>⋯</strong> menu with Delete.</li>
+    <li>If duplicates of this contact exist in your workspace (same email or phone), a <strong>⚠ Potential duplicate</strong> banner appears with a <strong>Review &amp; merge</strong> button.</li>
+</ul>
+
+<h3>3.4 Searching and filtering</h3>
+<ul>
+    <li><strong>Search bar:</strong> matches name, email, phone, or company (server-side)</li>
+    <li><strong>Group filter:</strong> dropdown of your groups</li>
+    <li><strong>Tag chips:</strong> click any tag at the top of the page to filter; click again to unfilter</li>
+    <li><strong>Command palette (<kbd>⌘K</kbd>):</strong> global search from anywhere</li>
+</ul>
+
+<h3>3.5 Bulk operations</h3>
+<p>Select multiple contacts via the checkbox column. A sticky action bar appears:</p>
+<ul>
+    <li><strong>Add to group</strong> — bulk-assign a group</li>
+    <li><strong>Add tag</strong> — bulk-tag</li>
+    <li><strong>Send message</strong> — opens the bulk-send composer (Email / SMS / WhatsApp). See <a href="#bulk-sends">section 6</a>.</li>
+    <li><strong>Delete</strong> — soft-delete (recoverable from DB)</li>
+</ul>
+
+<h3>3.6 Duplicate merge</h3>
+<p>Open a contact, look for the <strong>⚠ Potential duplicates</strong> banner. Click <strong>Review &amp; merge</strong>, check the boxes for the duplicates you want to absorb, and submit. Behavior:</p>
+<ul>
+    <li>Blank fields on the kept contact get filled from duplicates</li>
+    <li>All tags are combined</li>
+    <li>All SMS, WhatsApp, calls, and emails are reassigned to the kept contact</li>
+    <li>Duplicate records are hard-deleted</li>
+</ul>
+<p>The whole operation runs in a transaction — if any step fails, nothing changes.</p>
+
+<h2 id="import"><span class="num">4</span>Importing from CSV</h2>
+<ol>
+    <li>From the dashboard, click <strong>Template</strong> to download <code>contacts-import-template.csv</code> with the right headers + one example row.</li>
+    <li>Fill in your rows. Required column: <strong>Name</strong>. Optional: Email, Phone, Company, Job title, Website, Address, Notes, <strong>Tags</strong> (comma-separated, e.g. <code>vip, follow-up</code>).</li>
+    <li>Click <strong>Import</strong> (dashboard) or <strong>Import CSV</strong> (<code>/contacts/import</code>).</li>
+    <li>Upload your file. The preview page auto-detects which CSV column maps to which contact field. Adjust if needed.</li>
+    <li>Optionally assign the entire batch to a group via the dropdown.</li>
+    <li>Click <strong>Import contacts</strong>.</li>
+</ol>
+<div class="callout">
+    <strong>Tags column behavior</strong>
+    If a tag doesn't exist in your workspace yet, it's <strong>created on the fly</strong> with auto-slug.
+</div>
+
+<h2 id="comms"><span class="num">5</span>Communication</h2>
+
+<h3>5.1 SMS and WhatsApp</h3>
+<ul>
+    <li>Go to <strong>Messages</strong> in the sidebar, or click <strong>SMS</strong> on a contact.</li>
+    <li>The thread view shows iMessage-style bubbles. Outbound messages use your primary color; WhatsApp is green; inbound is muted grey.</li>
+    <li>Type your message, choose <strong>SMS</strong> or <strong>WhatsApp</strong> in the toggle, click <strong>Send</strong>.</li>
+    <li><strong>AI assist</strong> buttons inline:
+        <ul>
+            <li><strong>Fix</strong> — rewrites your message to correct spelling and grammar (preserves voice)</li>
+            <li><strong>Translate</strong> — pick from 9 languages</li>
+        </ul>
+    </li>
+    <li><strong>Two-way SMS:</strong> when a contact replies to your Twilio number, the message arrives in the thread automatically and a <strong>toast notification</strong> appears in any open browser session. The page title also gets a <code>•</code> prefix until you click back to that tab.</li>
+</ul>
+<p>In <strong>fake mode</strong> (no Twilio credentials configured), messages are recorded with a <code>FAKE...</code> SID and the UI shows a banner. Inbound webhook still works — useful for testing.</p>
+
+<h3>5.2 Calls</h3>
+<ul>
+    <li>Go to <strong>Calls</strong> in the sidebar.</li>
+    <li>The dialer pad accepts manual numbers, or click <strong>Call</strong> on any contact to log a call.</li>
+    <li>Browser-based voice calling requires real Twilio credentials + a TwiML Application SID configured in <strong>Settings → Twilio</strong>.</li>
+    <li>The right side shows recent call history with status badges.</li>
+</ul>
+
+<h3>5.3 Email</h3>
+<ul>
+    <li>Go to <strong>Email</strong> in the sidebar → click <strong>Compose</strong>.</li>
+    <li>Search and pick a contact via the autocomplete field.</li>
+    <li>Write subject + body. Email is queued and dispatched via your configured mail driver.</li>
+    <li>The email contains an invisible tracking pixel — once the recipient opens it, the <strong>Opens</strong> column in <code>/emails</code> increments.</li>
+</ul>
+
+<h2 id="bulk-sends"><span class="num">6</span>Bulk sends</h2>
+<p>Send a single composed message — Email, SMS, or WhatsApp — to many contacts at once, with mail-merge personalization.</p>
+
+<h3>6.1 Composing a bulk send</h3>
+<ol>
+    <li>Go to <strong>Contacts</strong>, tick the checkboxes for the contacts you want to message.</li>
+    <li>In the sticky action bar that appears, click <strong>Send message</strong>.</li>
+    <li>Pick a channel:
+        <ul>
+            <li><strong>Email</strong> — HTML/plain via your configured mail driver. Has a Subject field.</li>
+            <li><strong>SMS</strong> — Twilio SMS. Messages over 160 chars split into segments.</li>
+            <li><strong>WhatsApp</strong> — Twilio WhatsApp Business. No hard length cap.</li>
+        </ul>
+    </li>
+    <li>Compose your body using <strong>merge tokens</strong> to personalize per recipient:
+        <ul>
+            <li><code>{{first_name}}</code> — first word of the contact's name</li>
+            <li><code>{{name}}</code> — full name</li>
+            <li><code>{{company}}</code></li>
+            <li><code>{{email}}</code></li>
+            <li><code>{{phone}}</code></li>
+        </ul>
+    </li>
+    <li>Hit <strong>Send</strong>. Contacts missing the channel's required field (no email / no phone) are silently skipped — the toast tells you how many.</li>
+</ol>
+
+<h3>6.2 Tracking progress</h3>
+<p>After sending, you land on the <strong>Bulk send detail</strong> page (<code>/bulk-sends/{id}</code>) which shows:</p>
+<ul>
+    <li>Real-time counters: total / sent / failed</li>
+    <li>Progress bar (gradient primary→fuchsia)</li>
+    <li>The message template you used (so you can copy it for next time)</li>
+    <li>Full recipient list with avatars</li>
+</ul>
+<p>The page auto-refreshes every 4 seconds while the send is still running.</p>
+
+<h3>6.3 Past sends</h3>
+<p>Open <strong>Bulk sends</strong> in the sidebar (under Communication) for a paginated history with status badges, sent/failed counts, and preview text. Click any row to drill in.</p>
+
+<h3>6.4 Reusable templates</h3>
+<p>On the composer, tick <strong>Save as template for next time</strong> and give it a name. Next time you open the composer, the saved templates appear as clickable chips at the top — click one to instantly populate the channel, subject (email only), and body. Templates are workspace-scoped, so every member sees the same library.</p>
+<p>Delete a template via <code>DELETE /bulk-sends/templates/{id}</code> or by removing it from the chip strip on the composer (UI hover).</p>
+
+<div class="callout">
+    <strong>Rate limiting</strong>
+    Bulk sends are queued through Laravel's rate limiter: 60 jobs/min per channel by default (configurable in <code>app/Providers/AppServiceProvider.php</code>). Every successful send creates a normal <code>Message</code> or <code>EmailMessage</code> row, so each send still shows up in the contact's history.
+</div>
+
+<div class="callout">
+    <strong>Queue worker recommended</strong>
+    For batches over ~10 recipients, run <code>php artisan queue:work</code> under a process supervisor (systemd, Supervisor) so messages dispatch in the background instead of during the HTTP request.
+</div>
+
+<h2 id="ai"><span class="num">7</span>AI-assisted workflows</h2>
+<p>LaraContact integrates with Anthropic Claude for four user-facing features. All work in <strong>fake mode</strong> (heuristic fallbacks) if no API key is set.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Feature</th><th>Where to use it</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><strong>Contact enrichment</strong></td><td><code>/contacts/create</code> → AI-assisted fill card</td><td>Paste signature/text → extracts name, email, phone, company, title, website, LinkedIn</td></tr>
+<tr><td><strong>Spell-check &amp; grammar fix</strong></td><td>SMS thread composer → <strong>Fix</strong> button</td><td>Rewrites your message correctly without changing voice</td></tr>
+<tr><td><strong>Translation</strong></td><td>SMS thread composer → <strong>Translate</strong> button</td><td>9 languages (English, Spanish, French, German, Italian, Portuguese, Chinese, Japanese, Arabic)</td></tr>
+<tr><td><strong>Tag suggestion</strong></td><td><code>/contacts/create</code> → Tags card → <strong>Suggest from context</strong></td><td>Picks the best-fitting tags from your workspace's library based on notes + company + title</td></tr>
+</tbody></table></div>
+<p>Configure your Anthropic API key in <strong>Settings → AI</strong>. Click <strong>Test AI connection</strong> to verify.</p>
+
+<h2 id="reminders"><span class="num">8</span>Reminders and follow-ups</h2>
+
+<h3>7.1 List view (<code>/reminders</code>)</h3>
+<p>Pending reminders grouped by:</p>
+<ul>
+    <li><strong>Overdue</strong> (red badge)</li>
+    <li><strong>Today</strong> (amber)</li>
+    <li><strong>This week</strong></li>
+    <li><strong>Later</strong></li>
+</ul>
+<p>Each row has a circle to mark complete and a Delete button. The footer shows recently completed reminders, dimmed and struck through.</p>
+
+<h3>7.2 Calendar view (<code>/reminders/calendar</code>)</h3>
+<p>Monthly grid. Click any day to schedule a reminder for that date — a modal pops up. Each day shows up to 3 reminder chips colored by status. Use the arrows to navigate months, or the <strong>Today</strong> button to jump back.</p>
+
+<h3>7.3 Notifications</h3>
+<p>Reminders fire via the <code>reminders:send-due</code> scheduled command (runs every 5 minutes). When a reminder is due:</p>
+<ul>
+    <li>If <strong>Email me</strong> is checked → an email is sent to the reminder's owner</li>
+    <li>If <strong>SMS me</strong> is checked and your user profile has a phone → an SMS is sent via Twilio</li>
+</ul>
+<p>Each reminder is notified only once, then marked <code>notified_at</code>.</p>
+
+<h2 id="workspace"><span class="num">9</span>Workspace and team invitations</h2>
+<p>LaraContact supports multiple workspaces per user. Each workspace has its own contacts, tags, groups, settings, and audit log.</p>
+
+<h3>9.0 Exporting your workspace</h3>
+<p>Top-right of the Members page, click <strong>Export data</strong>. You'll download a ZIP containing CSV files of every contact, message, email, reminder, group, and tag in the current workspace, plus a <code>README.txt</code> manifest with row counts. Great for backups, migrations, or buyer offboarding.</p>
+
+<h3>9.1 Inviting a teammate</h3>
+<ul>
+    <li><em>Owner only.</em></li>
+    <li>Go to <strong>Workspace → Members</strong> in the sidebar.</li>
+    <li>Enter their email + role (Admin or Member) → <strong>Send invite</strong>.</li>
+    <li>They receive an email with an accept link. The link is valid for 7 days.</li>
+    <li>Once they accept, they appear in the members list with their role badge.</li>
+</ul>
+
+<h3>8.2 Removing a member</h3>
+<p>Owner only. Click <strong>Remove</strong> on any member row. The owner cannot be removed. If the removed user had the workspace set as their current workspace, they're auto-switched to their personal workspace.</p>
+
+<h3>8.3 Switching workspaces</h3>
+<p>Click the workspace name in the sidebar header → dropdown lists every workspace you belong to → click to switch. Your current workspace ID is saved on your user record.</p>
+
+<h3>8.4 Public registration toggle</h3>
+<p>The owner can disable public registration in <strong>Settings → General</strong>. When off, the <code>/register</code> URL returns 404 and the <strong>Create account</strong> link disappears from the login page. The only way to onboard new users becomes a team invitation.</p>
+
+<h2 id="library"><span class="num">10</span>Library: Groups and Tags</h2>
+
+<h3>9.1 Groups</h3>
+<p>A contact can belong to <strong>at most one group</strong>. Use for big-picture buckets (Customers, Leads, Partners). Each group has a color shown in the contact list.</p>
+<ul>
+    <li><code>/groups</code> — list, inline create, inline edit, delete</li>
+    <li>Deleting a group does NOT delete its contacts; their <code>group_id</code> is set to null</li>
+</ul>
+
+<h3>9.2 Tags</h3>
+<p>A contact can have <strong>many tags</strong>. Use for flexible labels (VIP, hot, follow-up, referral). Each tag has an accent color and an auto-generated slug.</p>
+<ul>
+    <li><code>/tags</code> — list, inline create, inline edit, delete</li>
+    <li>Tag names must be unique per workspace</li>
+    <li>Tags used in CSV imports are auto-created if missing</li>
+</ul>
+
+<h2 id="audit"><span class="num">11</span>Audit log</h2>
+<p><code>/audit</code> shows every change to every contact in this workspace: who, what, when. The diff renders old and new values for every changed field.</p>
+<p>Powered by <code>spatie/laravel-activitylog</code>. The <code>Contact</code> model uses <code>logOnlyDirty</code> and <code>dontSubmitEmptyLogs</code> so the log isn't spammed with no-op saves.</p>
+
+<h2 id="two-factor"><span class="num">12</span>Two-factor authentication</h2>
+<p>Optional but recommended. Adds a 6-digit code prompt after every password sign-in.</p>
+
+<h3>12.1 Setup</h3>
+<ol>
+    <li>Profile → <strong>Two-factor authentication</strong> → <strong>Set up 2FA</strong>.</li>
+    <li>Scan the QR with any TOTP app (Google Authenticator, 1Password, Authy, Bitwarden, iOS Passwords).</li>
+    <li>Save the 8 recovery codes shown below the QR — each is single-use and required if you lose access to your authenticator.</li>
+    <li>Enter the 6-digit code your authenticator shows, then <strong>Confirm</strong>.</li>
+</ol>
+
+<h3>12.2 Sign-in challenge</h3>
+<p>On every login attempt against an account with confirmed 2FA, after the password is validated the user is redirected to <code>/two-factor-challenge</code>. They enter the OTP (or toggle to <strong>Use a recovery code instead</strong>) to finish signing in. The session is held in <code>two_factor.pending_user_id</code> until verification — failed verifications don't authenticate them.</p>
+
+<h3>12.3 Recovery codes</h3>
+<p>Eight codes generated at setup, encrypted at rest. Each is consumed on use; remaining count is shown on the Profile → Two-factor page. Out of codes? Disable 2FA from the same page and re-enable to get a fresh set.</p>
+
+<h3>12.4 Locked out</h3>
+<p>Lost the authenticator AND all recovery codes? An admin with database access can clear the user's 2FA fields:</p>
+<pre>php artisan tinker --execute='\App\Models\User::where("email","you@example.com")->update(["two_factor_secret"=>null,"two_factor_confirmed_at"=>null,"two_factor_recovery_codes"=>null]);'</pre>
+<p>That user can then sign in normally with just their password.</p>
+
+<div class="callout">
+    <strong>Clock drift tolerance</strong>
+    LaraContact accepts OTPs from ±60 seconds (window=2) to handle small clock skew between server and authenticator. Bump the window in <code>App\Support\TwoFactor::verify()</code> if your environment needs more.
+</div>
+
+<h2 id="settings"><span class="num">13</span>Settings reference</h2>
+<p>Click your avatar → <strong>Settings</strong>, or the <strong>Settings</strong> link in the sidebar.</p>
+
+<h3>General</h3>
+<ul>
+    <li>App name, tagline, locale</li>
+    <li>Footer text (shown on landing page)</li>
+    <li><strong>Public registration toggle</strong></li>
+</ul>
+
+<h3>Branding</h3>
+<ul>
+    <li>Logo upload (PNG / JPG / SVG / WebP, max 2 MB)</li>
+    <li>Primary color — drives every button, link, and accent in the entire app (live-applied via CSS custom properties)</li>
+    <li>Email signature — appended to outbound contact emails</li>
+</ul>
+
+<h3>Mail</h3>
+<ul>
+    <li>Mailer driver (log, SMTP, Resend, Mailgun, Postmark, SES)</li>
+    <li>From email + name</li>
+    <li>SMTP host/port/user/encrypted-password/encryption</li>
+    <li>API drivers: encrypted API key + (Mailgun) domain</li>
+    <li><strong>Send test email</strong> button</li>
+</ul>
+
+<h3>Twilio</h3>
+<ul>
+    <li>Fake mode toggle</li>
+    <li>Account SID + Auth Token (encrypted)</li>
+    <li>Phone number, API Key SID/Secret (encrypted), Application SID</li>
+    <li>Inbound webhook URL is shown — copy it into your Twilio Console</li>
+</ul>
+
+<h3>AI</h3>
+<ul>
+    <li>Fake mode toggle</li>
+    <li>Anthropic API key (encrypted)</li>
+    <li>Model selector (Opus 4.7 / Sonnet 4.6 / Haiku 4.5)</li>
+    <li>Max tokens</li>
+    <li><strong>Test AI connection</strong> button</li>
+</ul>
+
+<h2 id="api"><span class="num">14</span>Public JSON API</h2>
+<p>LaraContact exposes a Sanctum-protected JSON API.</p>
+
+<h3>Creating a token</h3>
+<ul>
+    <li>Click your avatar → <strong>API tokens</strong>.</li>
+    <li>Click <strong>Create token</strong>, give it a name. The token is shown <strong>once</strong>; copy it before navigating away.</li>
+</ul>
+
+<h3>Endpoints</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td><code>GET</code></td><td><code>/api/user</code></td><td>Current authenticated user</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/contacts</code></td><td>Paginated contacts (<code>?q=</code>, <code>?per_page=25</code>)</td></tr>
+<tr><td><code>GET</code></td><td><code>/api/contacts/{id}</code></td><td>One contact with relations</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/contacts</code></td><td>Create contact</td></tr>
+<tr><td><code>PUT</code></td><td><code>/api/contacts/{id}</code></td><td>Update contact</td></tr>
+<tr><td><code>DELETE</code></td><td><code>/api/contacts/{id}</code></td><td>Soft-delete contact</td></tr>
+</tbody></table></div>
+
+<h3>Example</h3>
+<pre><code>curl -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Accept: application/json" \
+     https://yourdomain.com/api/contacts</code></pre>
+
+<h3>Rate limit</h3>
+<p>60 requests/minute per token. Exceeded requests get <code>429 Too Many Requests</code> with a <code>Retry-After</code> header.</p>
+
+<h2 id="shortcuts"><span class="num">15</span>Keyboard shortcuts</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><kbd>⌘K</kbd> / <kbd>Ctrl+K</kbd></td><td>Open command palette (global search + nav)</td></tr>
+<tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>Navigate within command palette</td></tr>
+<tr><td><kbd>Enter</kbd></td><td>Open selected result</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Close any modal or palette</td></tr>
+</tbody></table></div>
+
+<h2 id="faq"><span class="num">16</span>Frequently asked questions</h2>
+
+<h4>My SMS sends say <code>FAKE...</code> and don't actually arrive on phones.</h4>
+<p>You're in fake mode (no Twilio credentials). Go to <strong>Settings → Twilio</strong>, paste your Account SID, Auth Token, and phone number, and uncheck <strong>Fake mode</strong>.</p>
+
+<h4>I added an Anthropic API key but AI still seems to fall back.</h4>
+<p>Make sure <strong>Fake mode</strong> is unchecked in <strong>Settings → AI</strong>. Also use the <strong>Test AI connection</strong> button to confirm the key works.</p>
+
+<h4>How do I export my contacts?</h4>
+<p>Not currently built into the UI. You can pull them via the JSON API, or run <code>SELECT * FROM contacts WHERE team_id = ?</code> against your database. CSV export is on the roadmap.</p>
+
+<h4>Can I import vCards?</h4>
+<p>Not yet — only CSV. vCard support is on the roadmap.</p>
+
+<h4>Reminders never email me even though they're overdue.</h4>
+<p>Verify the scheduler is running. On a managed host that's a cron entry; in dev that's <code>php artisan schedule:work</code> in a separate terminal. See the <a href="index.html#deployment">Installation Guide</a>.</p>
+
+<h4>Where are uploaded logos stored?</h4>
+<p><code>storage/app/public/branding/</code>. Make sure you ran <code>php artisan storage:link</code> so they're served from <code>public/storage/branding/</code>.</p>
+
+<h4>Can I customize the email templates?</h4>
+<p>Yes — they live in <code>resources/views/emails/</code>. Edit them directly. The current templates are minimal inline-styled HTML.</p>
+
+<h4>Does it work on mobile browsers?</h4>
+<p>Yes. The sidebar collapses into a slide-over on small screens, tables hide secondary columns, and the dashboard re-stacks into a single column.</p>
+
+<h4>Is dark mode supported?</h4>
+<p>Yes — toggle it via the moon/sun icon in the top bar. Your preference is saved in <code>localStorage</code> and respected on next visit. System preference is honored on first load.</p>
+
+<h4>Can the same user belong to multiple workspaces?</h4>
+<p>Yes. Accept multiple team invitations, then use the workspace switcher in the sidebar header to flip between them.</p>
+
+<footer>
+    LaraContact &middot; User Guide &middot; v2.0 &middot; <a href="index.html">Installation Guide →</a>
+</footer>
+
+</main>
+
+</div>
+
+</body>
+</html>

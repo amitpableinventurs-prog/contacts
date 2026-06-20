@@ -1,0 +1,32 @@
+<x-app-layout>
+    <x-slot:header>Dashboard</x-slot:header>
+
+    <div class="flex items-start justify-center min-h-[60vh] pt-16">
+        <div class="w-full max-w-lg space-y-6">
+            <div class="text-center space-y-1">
+                <h1 class="text-2xl font-bold tracking-tight">Search Contact</h1>
+                <p class="text-sm text-muted-foreground">Enter a phone number or name to find a contact.</p>
+            </div>
+
+            <form method="GET" action="{{ route('contacts.index') }}" class="flex gap-2">
+                <div class="flex-1 relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+                    </svg>
+                    <input
+                        type="text"
+                        name="q"
+                        autofocus
+                        placeholder="Phone number or name…"
+                        class="flex h-11 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                </div>
+                <x-ui.button type="submit" class="h-11 px-6">Search</x-ui.button>
+            </form>
+
+            <div class="text-center">
+                <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">View all contacts →</a>
+            </div>
+        </div>
+    </div>
+</x-app-layout>
