@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/sgmcjnpl/public_html/143
+    - export DEPLOYPATH=/home/sgmcjnpl/public_html/contacts
     - /bin/rsync -av --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' . $DEPLOYPATH/
     - cd $DEPLOYPATH && php artisan migrate --force
     - cd $DEPLOYPATH && php artisan config:cache

@@ -20,7 +20,7 @@ jobs:
           script: |
             set -e
 
-            DEPLOY_PATH="$HOME/public_html/143"
+            DEPLOY_PATH="$HOME/public_html/contacts"
 
             echo "==> Pulling latest code..."
             cd "$DEPLOY_PATH"
