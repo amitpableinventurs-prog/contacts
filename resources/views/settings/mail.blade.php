@@ -91,11 +91,21 @@
                         </div>
                     </x-ui.card-content>
                     <x-ui.card-footer class="justify-between">
-                        <button type="button"
-                                onclick="document.getElementById('mail-test-form').submit();"
-                                class="inline-flex h-9 items-center rounded-md border border-input px-4 text-sm font-medium hover:bg-accent">
-                            Send test email
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <x-ui.input id="test_to_email"
+                                        type="email"
+                                        placeholder="Test recipient email…"
+                                        class="w-56 h-9 text-sm"
+                                        value="{{ Auth::user()->email }}" />
+                            <button type="button"
+                                    onclick="
+                                        document.getElementById('test_to_hidden').value = document.getElementById('test_to_email').value;
+                                        document.getElementById('mail-test-form').submit();
+                                    "
+                                    class="inline-flex h-9 items-center rounded-md border border-input px-4 text-sm font-medium hover:bg-accent">
+                                Send test email
+                            </button>
+                        </div>
                         <x-ui.button type="submit">Save changes</x-ui.button>
                     </x-ui.card-footer>
                 </x-ui.card>
@@ -104,6 +114,7 @@
             {{-- Separate form for test send so it doesn't carry the unsaved fields --}}
             <form method="POST" action="{{ route('settings.mail.test') }}" class="hidden" id="mail-test-form">
                 @csrf
+                <input type="hidden" name="test_to" id="test_to_hidden" value="{{ Auth::user()->email }}" />
             </form>
         </x-settings-layout>
     </div>

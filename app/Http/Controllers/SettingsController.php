@@ -122,11 +122,14 @@ class SettingsController extends Controller
     {
         Gate::authorize('manage-settings');
 
+        $request->validate(['test_to' => ['nullable', 'email', 'max:255']]);
+        $to = $request->input('test_to') ?: Auth::user()->email;
+
         try {
-            Mail::raw('Test message from your CRM.', function ($m) {
-                $m->to(Auth::user()->email)->subject('Test — '.config('app.name'));
+            Mail::raw('This is a test email from your CRM ('.config('app.name').'). If you received this, mail is configured correctly.', function ($m) use ($to) {
+                $m->to($to)->subject('Test Email — '.config('app.name'));
             });
-            return back()->with('toast', ['type' => 'success', 'message' => 'Test email sent to '.Auth::user()->email.'.']);
+            return back()->with('toast', ['type' => 'success', 'message' => 'Test email sent to '.$to.'.']);
         } catch (\Throwable $e) {
             return back()->with('toast', ['type' => 'error', 'message' => 'Test failed: '.$e->getMessage()]);
         }
