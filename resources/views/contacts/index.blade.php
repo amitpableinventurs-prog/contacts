@@ -232,6 +232,25 @@
             </form>
         </div>
 
+        {{-- Bulk delete by count (Admin / Manager only) --}}
+        @if (!auth()->user()->isClerk())
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm text-muted-foreground">Bulk delete:</span>
+                @foreach ([500, 1000, 3000, 5000] as $count)
+                    <form method="POST" action="{{ route('contacts.bulk') }}"
+                          onsubmit="return confirm('Move {{ $count }} contacts to trash? This cannot be undone easily.')">
+                        @csrf
+                        <input type="hidden" name="action" value="delete_count" />
+                        <input type="hidden" name="bulk_count" value="{{ $count }}" />
+                        <x-ui.button type="submit" variant="outline" size="sm">
+                            🗑 {{ number_format($count) }}
+                        </x-ui.button>
+                    </form>
+                @endforeach
+                <span class="text-xs text-muted-foreground">(deletes oldest contacts first)</span>
+            </div>
+        @endif
+
         {{-- Table --}}
         <x-ui.card class="overflow-hidden">
             @if ($contacts->isEmpty())

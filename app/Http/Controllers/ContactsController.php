@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use App\Models\ContactEditHistory;
 use App\Models\ContactFile;
 use App\Models\ContactGalleryImage;
 use App\Models\ContactNote;
@@ -147,6 +148,18 @@ class ContactsController extends Controller
 
         $data = $this->validateContact($request);
 
+        // Phone duplicate check — warn if number already exists in this team.
+        if (! empty($data['phone'])) {
+            $exists = Contact::where('team_id', Auth::user()->current_team_id)
+                ->where('phone', $data['phone'])
+                ->exists();
+            if ($exists) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['phone' => 'This phone number already exists in your contacts.']);
+            }
+        }
+
         // Clerk-created contacts require manager approval before becoming active.
         $approvalStatus = Auth::user()->isClerk() ? 'pending' : 'approved';
 
@@ -183,7 +196,7 @@ class ContactsController extends Controller
     {
         Gate::authorize('view', $contact);
 
-        $contact->load(['group', 'tags', 'owner', 'contactNotes.author', 'files', 'galleryImages']);
+        $contact->load(['group', 'tags', 'owner', 'contactNotes.author', 'files', 'galleryImages', 'editHistories.user']);
 
         $activity = $contact->messages()->latest('created_at')->limit(50)->get();
         $emails   = $contact->emails()->latest('created_at')->limit(50)->get();
@@ -224,11 +237,36 @@ class ContactsController extends Controller
         Gate::authorize('update', $contact);
 
         $data = $this->validateContact($request);
+
+        // Track which fields changed for edit history.
+        $trackFields = ['name','email','phone','company','job_title','website','address','city','notes'];
+        $changed = [];
+        foreach ($trackFields as $field) {
+            $old = $contact->$field;
+            $new = $data[$field] ?? null;
+            if ((string) $old !== (string) $new) {
+                $changed[$field] = ['from' => $old, 'to' => $new];
+            }
+        }
+
         $contact->update($data);
-
         $this->handlePhoto($request, $contact);
-
         $contact->tags()->sync($request->input('tags', []));
+
+        // Save edit history and prune to last 5 entries.
+        if (! empty($changed)) {
+            ContactEditHistory::create([
+                'contact_id'     => $contact->id,
+                'user_id'        => Auth::id(),
+                'changed_fields' => $changed,
+            ]);
+            $oldIds = ContactEditHistory::where('contact_id', $contact->id)
+                ->orderByDesc('created_at')
+                ->skip(5)->pluck('id');
+            if ($oldIds->isNotEmpty()) {
+                ContactEditHistory::whereIn('id', $oldIds)->delete();
+            }
+        }
 
         ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name]);
 
@@ -513,6 +551,19 @@ class ContactsController extends Controller
 
         if (empty($ids)) {
             return back()->with('toast', ['type' => 'error', 'message' => 'No contacts selected.']);
+        }
+
+        // Bulk delete by count (500 / 1000 / 3000 / 5000) — no checkbox ids needed.
+        if ($action === 'delete_count') {
+            Gate::authorize('viewAny', Contact::class);
+            $count   = min((int) $request->input('bulk_count', 500), 5000);
+            $deleted = Contact::where('team_id', $teamId)
+                ->orderBy('id')
+                ->limit($count)
+                ->get()
+                ->each->delete()
+                ->count();
+            return back()->with('toast', ['type' => 'success', 'message' => "{$deleted} contact(s) moved to trash."]);
         }
 
         $contacts = Contact::where('team_id', $teamId)->whereIn('id', $ids);

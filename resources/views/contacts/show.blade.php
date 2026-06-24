@@ -154,6 +154,14 @@
                         @if ($contact->owner)
                             <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Owner</dt><dd>{{ $contact->owner->name }}</dd></div>
                         @endif
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-muted-foreground">Created</dt>
+                            <dd title="{{ $contact->created_at->format('d M Y H:i:s') }}">{{ $contact->created_at->format('d M Y, h:i A') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs uppercase tracking-wide text-muted-foreground">Last Updated</dt>
+                            <dd title="{{ $contact->updated_at->format('d M Y H:i:s') }}">{{ $contact->updated_at->diffForHumans() }} <span class="text-muted-foreground text-xs">({{ $contact->updated_at->format('d M Y') }})</span></dd>
+                        </div>
                     </dl>
 
                     @if ($contact->tags->isNotEmpty())
@@ -188,6 +196,7 @@
                     <x-ui.tabs-list>
                         <x-ui.tabs-trigger value="activity">Activity</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="notes">Notes ({{ $contact->contactNotes->count() }})</x-ui.tabs-trigger>
+                        <x-ui.tabs-trigger value="history">History ({{ $contact->editHistories->count() }})</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="description">Description</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="files">Files ({{ $contact->files->count() }})</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="gallery">Gallery ({{ $contact->galleryImages->count() }})</x-ui.tabs-trigger>
@@ -229,6 +238,44 @@
                                                         <p class="text-sm text-muted-foreground truncate">{{ $preview }}</p>
                                                     @endif
                                                 </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+                            </x-ui.card-content>
+                        </x-ui.card>
+                    </x-ui.tabs-content>
+
+                    {{-- Edit History --}}
+                    <x-ui.tabs-content value="history">
+                        <x-ui.card>
+                            <x-ui.card-header>
+                                <x-ui.card-title>Edit History</x-ui.card-title>
+                                <x-ui.card-description>Last 5 changes to this contact.</x-ui.card-description>
+                            </x-ui.card-header>
+                            <x-ui.card-content class="p-0">
+                                @if ($contact->editHistories->isEmpty())
+                                    <p class="text-sm text-muted-foreground py-10 text-center">No edits recorded yet.</p>
+                                @else
+                                    <ul class="divide-y">
+                                        @foreach ($contact->editHistories as $history)
+                                            <li class="p-4 space-y-2">
+                                                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                                                    <span class="font-medium text-foreground">{{ $history->user?->name ?? 'Unknown user' }}</span>
+                                                    <span title="{{ $history->created_at->format('d M Y H:i:s') }}">{{ $history->created_at->format('d M Y, h:i A') }}</span>
+                                                </div>
+                                                <ul class="space-y-1">
+                                                    @foreach ($history->changed_fields as $field => $change)
+                                                        <li class="text-xs flex flex-wrap items-baseline gap-x-1.5">
+                                                            <span class="font-semibold capitalize">{{ str_replace('_', ' ', $field) }}:</span>
+                                                            @if ($change['from'])
+                                                                <span class="text-red-600 line-through">{{ $change['from'] }}</span>
+                                                                <span class="text-muted-foreground">→</span>
+                                                            @endif
+                                                            <span class="text-green-700">{{ $change['to'] ?? '(cleared)' }}</span>
+                                                        </li>
+                                                    @endforeach
+                                                </ul>
                                             </li>
                                         @endforeach
                                     </ul>

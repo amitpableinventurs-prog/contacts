@@ -154,11 +154,13 @@ class ImportsController extends Controller
         Gate::authorize('manage-imports');
 
         $data = $request->validate([
-            'file' => ['required', 'string'],
-            'group_id' => ['nullable', 'integer'],
-            'has_header' => ['nullable', 'boolean'],
-            'mapping' => ['required', 'array'],
-            'mapping.*' => ['nullable', 'string'],
+            'file'           => ['required', 'string'],
+            'group_id'       => ['nullable', 'integer'],
+            'has_header'     => ['nullable', 'boolean'],
+            'mapping'        => ['required', 'array'],
+            'mapping.*'      => ['nullable', 'string'],
+            'overwrite_by_phone'   => ['nullable', 'boolean'],
+            'overwrite_empty_only' => ['nullable', 'boolean'],
         ]);
 
         $path = Storage::disk('local')->path($data['file']);
@@ -175,13 +177,16 @@ class ImportsController extends Controller
             return back()->withErrors(['mapping' => 'You must map at least one column to "Name".']);
         }
 
-        $teamId = $request->user()->current_team_id;
+        $teamId          = $request->user()->current_team_id;
+        $overwriteByPhone  = ! empty($data['overwrite_by_phone']);
+        $overwriteEmptyOnly = ! empty($data['overwrite_empty_only']);
         $created = 0;
+        $updated = 0;
         $skipped = 0;
         $tagCache = [];
 
         foreach ($dataRows as $row) {
-            $attrs = ['team_id' => $teamId, 'owner_id' => $request->user()->id, 'group_id' => $data['group_id'] ?? null];
+            $attrs   = ['team_id' => $teamId, 'owner_id' => $request->user()->id, 'group_id' => $data['group_id'] ?? null];
             $rowTags = [];
 
             foreach ($mapping as $idx => $field) {
@@ -208,21 +213,47 @@ class ImportsController extends Controller
                 continue;
             }
 
-            $contact = Contact::create($attrs);
-            if ($rowTags) {
-                $contact->tags()->sync($rowTags);
+            // Try to find existing contact by phone when overwrite mode is on.
+            $existing = null;
+            if ($overwriteByPhone && ! empty($attrs['phone'])) {
+                $existing = Contact::where('team_id', $teamId)
+                    ->where('phone', $attrs['phone'])
+                    ->first();
             }
-            $created++;
+
+            if ($existing) {
+                // Overwrite: empty-only mode fills only blank fields; otherwise overwrites all.
+                $updateAttrs = [];
+                foreach ($attrs as $field => $value) {
+                    if (in_array($field, ['team_id', 'owner_id'])) continue;
+                    if ($overwriteEmptyOnly && ! empty($existing->$field)) continue;
+                    $updateAttrs[$field] = $value;
+                }
+                if (! empty($updateAttrs)) {
+                    $existing->update($updateAttrs);
+                }
+                if ($rowTags) {
+                    $existing->tags()->syncWithoutDetaching($rowTags);
+                }
+                $updated++;
+            } else {
+                $contact = Contact::create($attrs);
+                if ($rowTags) {
+                    $contact->tags()->sync($rowTags);
+                }
+                $created++;
+            }
         }
 
         Storage::disk('local')->delete($data['file']);
 
+        $msg = "Imported {$created} new contact" . ($created === 1 ? '' : 's');
+        if ($updated) $msg .= ", updated {$updated}";
+        if ($skipped) $msg .= ", skipped {$skipped} (missing name)";
+
         return redirect()
             ->route('contacts.index')
-            ->with('toast', [
-                'type' => 'success',
-                'message' => "Imported {$created} contact" . ($created === 1 ? '' : 's') . ($skipped ? " — {$skipped} skipped (missing name)." : '.'),
-            ]);
+            ->with('toast', ['type' => 'success', 'message' => $msg . '.']);
     }
 
     /** Read up to $limit rows (0 = no limit) from the CSV file. */

@@ -95,6 +95,11 @@ class Contact extends Model
         return $this->hasMany(ContactGalleryImage::class);
     }
 
+    public function editHistories(): HasMany
+    {
+        return $this->hasMany(ContactEditHistory::class)->latest()->limit(5);
+    }
+
     // Legacy many-to-many via explicit pivot (kept for existing code that may use it)
     public function contactGroups(): BelongsToMany
     {
