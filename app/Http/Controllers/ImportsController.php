@@ -203,6 +203,8 @@ class ImportsController extends Controller
                         );
                         $rowTags[] = $tagCache[$slug]->id;
                     }
+                } elseif ($field === 'phone') {
+                    $attrs[$field] = preg_replace('/[^\d+]/', '', $value);
                 } else {
                     $attrs[$field] = $value;
                 }
@@ -219,6 +221,16 @@ class ImportsController extends Controller
                 $existing = Contact::where('team_id', $teamId)
                     ->where('phone', $attrs['phone'])
                     ->first();
+
+                // Fallback: strip all non-digits from stored phones and compare
+                if (! $existing) {
+                    $digitsOnly = preg_replace('/\D/', '', $attrs['phone']);
+                    if ($digitsOnly !== '') {
+                        $existing = Contact::where('team_id', $teamId)
+                            ->get()
+                            ->first(fn ($c) => preg_replace('/\D/', '', (string) $c->phone) === $digitsOnly);
+                    }
+                }
             }
 
             if ($existing) {

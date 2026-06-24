@@ -549,10 +549,6 @@ class ContactsController extends Controller
         $action = $request->input('action');
         $ids    = $request->input('contact_ids', []);
 
-        if (empty($ids)) {
-            return back()->with('toast', ['type' => 'error', 'message' => 'No contacts selected.']);
-        }
-
         // Bulk delete by count (500 / 1000 / 3000 / 5000) — no checkbox ids needed.
         if ($action === 'delete_count') {
             Gate::authorize('viewAny', Contact::class);
@@ -564,6 +560,10 @@ class ContactsController extends Controller
                 ->each->delete()
                 ->count();
             return back()->with('toast', ['type' => 'success', 'message' => "{$deleted} contact(s) moved to trash."]);
+        }
+
+        if (empty($ids)) {
+            return back()->with('toast', ['type' => 'error', 'message' => 'No contacts selected.']);
         }
 
         $contacts = Contact::where('team_id', $teamId)->whereIn('id', $ids);
