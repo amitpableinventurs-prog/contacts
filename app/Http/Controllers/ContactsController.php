@@ -245,7 +245,10 @@ class ContactsController extends Controller
             $old = $contact->$field;
             $new = $data[$field] ?? null;
             if ((string) $old !== (string) $new) {
-                $changed[$field] = ['from' => $old, 'to' => $new];
+                $changed[$field] = [
+                    'from' => $this->safeUtf8((string) ($old ?? '')),
+                    'to'   => $this->safeUtf8((string) ($new ?? '')),
+                ];
             }
         }
 
@@ -255,16 +258,20 @@ class ContactsController extends Controller
 
         // Save edit history and prune to last 5 entries.
         if (! empty($changed)) {
-            ContactEditHistory::create([
-                'contact_id'     => $contact->id,
-                'user_id'        => Auth::id(),
-                'changed_fields' => $changed,
-            ]);
-            $oldIds = ContactEditHistory::where('contact_id', $contact->id)
-                ->orderByDesc('created_at')
-                ->skip(5)->pluck('id');
-            if ($oldIds->isNotEmpty()) {
-                ContactEditHistory::whereIn('id', $oldIds)->delete();
+            try {
+                ContactEditHistory::create([
+                    'contact_id'     => $contact->id,
+                    'user_id'        => Auth::id(),
+                    'changed_fields' => $changed,
+                ]);
+                $oldIds = ContactEditHistory::where('contact_id', $contact->id)
+                    ->orderByDesc('created_at')
+                    ->skip(5)->pluck('id');
+                if ($oldIds->isNotEmpty()) {
+                    ContactEditHistory::whereIn('id', $oldIds)->delete();
+                }
+            } catch (\Throwable) {
+                // Never crash the save because of edit-history logging.
             }
         }
 
@@ -660,6 +667,12 @@ class ContactsController extends Controller
         $data['custom_fields'] = $custom ?: null;
 
         return $data;
+    }
+
+    /** Strip invalid UTF-8 bytes so values are safe to JSON-encode. */
+    private function safeUtf8(string $value): string
+    {
+        return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
     }
 
     private function handlePhoto(Request $request, Contact $contact): void
