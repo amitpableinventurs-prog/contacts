@@ -160,6 +160,12 @@ class ContactsController extends Controller
             }
         }
 
+        foreach ($data as $k => $v) {
+            if (is_string($v)) {
+                $data[$k] = mb_convert_encoding($v, 'UTF-8', 'UTF-8');
+            }
+        }
+
         // Clerk-created contacts require manager approval before becoming active.
         $approvalStatus = Auth::user()->isClerk() ? 'pending' : 'approved';
 
@@ -249,6 +255,13 @@ class ContactsController extends Controller
                     'from' => $this->safeUtf8((string) ($old ?? '')),
                     'to'   => $this->safeUtf8((string) ($new ?? '')),
                 ];
+            }
+        }
+
+        // Scrub invalid UTF-8 bytes that may have come from old Windows-1252 imports.
+        foreach ($data as $k => $v) {
+            if (is_string($v)) {
+                $data[$k] = mb_convert_encoding($v, 'UTF-8', 'UTF-8');
             }
         }
 
