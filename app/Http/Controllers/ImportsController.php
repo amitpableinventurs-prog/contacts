@@ -188,7 +188,7 @@ class ImportsController extends Controller
         $tagCache = [];
 
         foreach ($dataRows as $row) {
-            $attrs   = ['team_id' => $teamId, 'owner_id' => $request->user()->id, 'group_id' => $data['group_id'] ?? null];
+            $attrs   = ['team_id' => $teamId, 'owner_id' => $request->user()->id, 'group_id' => $data['group_id'] ?? null, 'approval_status' => 'approved'];
             $rowTags = [];
 
             foreach ($mapping as $idx => $field) {

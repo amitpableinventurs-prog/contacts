@@ -88,7 +88,9 @@ class ContactsController extends Controller
             }
         }
 
-        $query->where('approval_status', '!=', 'pending');
+        $query->where(function ($q) {
+            $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
+        });
 
         $contacts     = $quotaExceeded
             ? new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, 1)
@@ -190,8 +192,11 @@ class ContactsController extends Controller
             ? "{$contact->name} submitted — awaiting manager approval."
             : "{$contact->name} created.";
 
-        return redirect()->route('contacts.show', $contact)
-            ->with('toast', ['type' => 'success', 'message' => $msg]);
+        $redirect = $approvalStatus === 'pending'
+            ? redirect()->route('contacts.index')
+            : redirect()->route('contacts.show', $contact);
+
+        return $redirect->with('toast', ['type' => 'success', 'message' => $msg]);
     }
 
     // ------------------------------------------------------------------
