@@ -31,8 +31,14 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5 sm:col-span-2">
+                        <x-ui.label for="phone">Phone / Number <span class="text-destructive">*</span></x-ui.label>
+                        <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="+91 98765 43210" required autofocus />
+                        @error('phone') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="name">Name <span class="text-destructive">*</span></x-ui.label>
-                        <x-ui.input id="name" name="name" value="{{ old('name', $contact?->name) }}" required autofocus />
+                        <x-ui.input id="name" name="name" value="{{ old('name', $contact?->name) }}" required />
                         @error('name') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
@@ -43,19 +49,13 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                     </div>
 
                     <div class="space-y-1.5">
-                        <x-ui.label for="phone">Phone / Number</x-ui.label>
-                        <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="+1 415 555 0142" />
-                        @error('phone') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                        <x-ui.label for="city">City</x-ui.label>
+                        <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" />
                     </div>
 
                     <div class="space-y-1.5">
                         <x-ui.label for="address">Address</x-ui.label>
                         <x-ui.input id="address" name="address" value="{{ old('address', $contact?->address) }}" />
-                    </div>
-
-                    <div class="space-y-1.5">
-                        <x-ui.label for="city">City</x-ui.label>
-                        <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" />
                     </div>
                 </div>
             </x-ui.card-content>
