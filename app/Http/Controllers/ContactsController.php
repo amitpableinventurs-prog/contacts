@@ -45,52 +45,33 @@ class ContactsController extends Controller
         $user   = Auth::user();
         $teamId = $user->current_team_id;
 
-        $isRestricted = $user->isClerk() || $user->isManager();
-        $perPage      = $isRestricted ? 20 : 25;
+        $perPage = 25;
 
         $query = Contact::where('team_id', $teamId)->with(['group', 'tags', 'owner']);
 
-        $number        = trim((string) $request->input('number'));
-        $quotaExceeded = false;
+        $number = trim((string) $request->input('number'));
 
-        if ($isRestricted) {
-            // ── Clerk / Manager: number search only ───────────────────────
-            if ($number !== '') {
-                // Quota check
-                if ($user->search_quota > 0 && $user->searches_used >= $user->search_quota) {
-                    $quotaExceeded = true;
-                } else {
-                    $user->increment('searches_used');
-                    $query->where(function ($q) use ($number) {
-                        $q->where('phone', 'like', "%{$number}%")
-                          ->orWhere('number', 'like', "%{$number}%");
-                    });
-                }
-            }
-        } else {
-            // ── Admin / Super Admin: full search ──────────────────────────
-            if ($q = trim((string) $request->input('q'))) {
-                $query->where(function ($sub) use ($q) {
-                    $sub->where('name',    'like', "%{$q}%")
-                        ->orWhere('email',   'like', "%{$q}%")
-                        ->orWhere('phone',   'like', "%{$q}%")
-                        ->orWhere('company', 'like', "%{$q}%")
-                        ->orWhere('city',    'like', "%{$q}%");
-                });
-            }
-            if ($number !== '') {
-                $query->where(function ($q) use ($number) {
-                    $q->where('phone', 'like', "%{$number}%")
-                      ->orWhere('number', 'like', "%{$number}%");
-                });
-            }
-            if ($groupId = $request->input('group_id')) {
-                $query->where('group_id', $groupId);
-            }
-            if ($tagIds = $request->input('tags')) {
-                foreach ((array) $tagIds as $tagId) {
-                    $query->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId));
-                }
+        if ($q = trim((string) $request->input('q'))) {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name',    'like', "%{$q}%")
+                    ->orWhere('email',   'like', "%{$q}%")
+                    ->orWhere('phone',   'like', "%{$q}%")
+                    ->orWhere('company', 'like', "%{$q}%")
+                    ->orWhere('city',    'like', "%{$q}%");
+            });
+        }
+        if ($number !== '') {
+            $query->where(function ($q) use ($number) {
+                $q->where('phone', 'like', "%{$number}%")
+                  ->orWhere('number', 'like', "%{$number}%");
+            });
+        }
+        if ($groupId = $request->input('group_id')) {
+            $query->where('group_id', $groupId);
+        }
+        if ($tagIds = $request->input('tags')) {
+            foreach ((array) $tagIds as $tagId) {
+                $query->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId));
             }
         }
 
@@ -98,15 +79,12 @@ class ContactsController extends Controller
             $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
         });
 
-        $contacts     = $quotaExceeded
-            ? new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage, 1)
-            : $query->orderBy('name')->paginate($perPage)->withQueryString();
-
+        $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
         $groups       = Group::where('team_id', $teamId)->orderBy('name')->get();
         $tags         = Tag::where('team_id', $teamId)->orderBy('name')->get();
         $pendingCount = $user->isClerk() ? 0 : Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count();
 
-        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'quotaExceeded', 'isRestricted', 'user'));
+        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user'));
     }
 
     // ------------------------------------------------------------------

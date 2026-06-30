@@ -61,90 +61,50 @@
             </div>
         </div>
 
-        {{-- Quota exceeded alert --}}
-        @if ($quotaExceeded ?? false)
-            <div class="flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm">
-                <svg class="h-5 w-5 shrink-0 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                <span class="font-semibold text-red-800">Search limit reached.</span>
-                <span class="text-red-700">You have used all {{ $user->search_quota }} searches. Contact your Admin to increase your limit.</span>
-            </div>
-        @endif
-
         {{-- Search bar --}}
         <x-ui.card>
             <x-ui.card-content class="p-4">
                 <form method="GET" action="{{ route('contacts.index') }}">
-                    @if ($isRestricted ?? false)
-                        {{-- Clerk / Manager: phone number search only --}}
-                        <div class="flex flex-wrap items-center gap-2">
-                            <div class="flex-1 min-w-[200px]">
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                    <x-ui.input name="number" value="{{ request('number') }}" placeholder="Search by phone number…" class="pl-9" autofocus />
-                                </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div class="flex-1 min-w-[160px]">
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+                                <x-ui.input name="q" value="{{ request('q') }}" placeholder="Name, email, company, city…" class="pl-9" />
                             </div>
-                            <x-ui.button type="submit">Search</x-ui.button>
-                            @if (request()->filled('number'))
-                                <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground">Clear</a>
-                            @endif
-                            {{-- Search usage counter (always visible for restricted users) --}}
-                            @php
-                                $hasQuota   = ($user->search_quota ?? 0) > 0;
-                                $usedCount  = $user->searches_used ?? 0;
-                                $remaining  = $hasQuota ? max(0, $user->search_quota - $usedCount) : null;
-                                $isLow      = $hasQuota && $remaining <= 10;
-                            @endphp
-                            <span class="ml-auto text-xs text-muted-foreground">
-                                Searches used: <strong class="{{ $isLow ? 'text-red-600' : 'text-foreground' }}">{{ $usedCount }}</strong>
-                                @if ($hasQuota)
-                                    / {{ $user->search_quota }}
-                                    &nbsp;·&nbsp; Remaining: <strong class="{{ $isLow ? 'text-red-600' : 'text-foreground' }}">{{ $remaining }}</strong>
-                                @endif
-                            </span>
                         </div>
-                    @else
-                        {{-- Admin / Super Admin: full search --}}
-                        <div class="flex flex-wrap items-center gap-2">
-                            <div class="flex-1 min-w-[160px]">
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-                                    <x-ui.input name="q" value="{{ request('q') }}" placeholder="Name, email, company, city…" class="pl-9" />
-                                </div>
+                        <div class="w-full sm:w-44">
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                <x-ui.input name="number" value="{{ request('number') }}" placeholder="Phone number…" class="pl-9" />
                             </div>
-                            <div class="w-full sm:w-44">
-                                <div class="relative">
-                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
-                                    <x-ui.input name="number" value="{{ request('number') }}" placeholder="Phone number…" class="pl-9" />
-                                </div>
-                            </div>
-                            <select name="group_id" class="flex h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
-                                <option value="">All groups</option>
-                                @foreach ($groups as $group)
-                                    <option value="{{ $group->id }}" @selected(request('group_id') == $group->id)>{{ $group->name }}</option>
-                                @endforeach
-                            </select>
-                            <x-ui.button type="submit" variant="secondary">Search</x-ui.button>
-                            @if (request()->hasAny(['q','number','group_id','tags']))
-                                <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground">Clear</a>
-                            @endif
                         </div>
-                        {{-- Tag chips --}}
-                        @if ($tags->isNotEmpty())
-                            <div class="flex flex-wrap items-center gap-2 pt-3">
-                                <span class="text-xs text-muted-foreground">Tags:</span>
-                                @php $activeTags = (array) request('tags', []); @endphp
-                                @foreach ($tags as $tag)
-                                    @php
-                                        $isActive = in_array($tag->id, $activeTags);
-                                        $newTags  = $isActive ? array_diff($activeTags, [$tag->id]) : array_merge($activeTags, [$tag->id]);
-                                        $href     = request()->fullUrlWithQuery(['tags' => array_values($newTags)]);
-                                    @endphp
-                                    <a href="{{ $href }}" class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors {{ $isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-accent' }}">
-                                        {{ $tag->name }}
-                                    </a>
-                                @endforeach
-                            </div>
+                        <select name="group_id" class="flex h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
+                            <option value="">All groups</option>
+                            @foreach ($groups as $group)
+                                <option value="{{ $group->id }}" @selected(request('group_id') == $group->id)>{{ $group->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-ui.button type="submit" variant="secondary">Search</x-ui.button>
+                        @if (request()->hasAny(['q','number','group_id','tags']))
+                            <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground">Clear</a>
                         @endif
+                    </div>
+                    {{-- Tag chips --}}
+                    @if ($tags->isNotEmpty())
+                        <div class="flex flex-wrap items-center gap-2 pt-3">
+                            <span class="text-xs text-muted-foreground">Tags:</span>
+                            @php $activeTags = (array) request('tags', []); @endphp
+                            @foreach ($tags as $tag)
+                                @php
+                                    $isActive = in_array($tag->id, $activeTags);
+                                    $newTags  = $isActive ? array_diff($activeTags, [$tag->id]) : array_merge($activeTags, [$tag->id]);
+                                    $href     = request()->fullUrlWithQuery(['tags' => array_values($newTags)]);
+                                @endphp
+                                <a href="{{ $href }}" class="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium transition-colors {{ $isActive ? 'bg-primary text-primary-foreground border-primary' : 'border-input hover:bg-accent' }}">
+                                    {{ $tag->name }}
+                                </a>
+                            @endforeach
+                        </div>
                     @endif
                 </form>
             </x-ui.card-content>
