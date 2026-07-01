@@ -86,6 +86,14 @@ class UsersController extends Controller
             'searches_used'=> 0,
         ]);
 
+        // Join the creator's workspace so the new account shares the same
+        // contacts/groups/tags instead of landing in its own empty team.
+        $creatorTeamId = Auth::user()->current_team_id;
+        if ($creatorTeamId) {
+            $user->teams()->syncWithoutDetaching([$creatorTeamId => ['role' => 'member']]);
+            $user->forceFill(['current_team_id' => $creatorTeamId])->save();
+        }
+
         ActivityLogger::log('user.created', $user, ['name' => $user->name, 'role' => $user->role]);
 
         return redirect()->route('users.index')

@@ -65,21 +65,25 @@
                         </select>
                     </div>
 
-                    {{-- Duplicate / overwrite options --}}
-                    <label class="flex items-start gap-3 rounded-md border border-input p-3 sm:col-span-2" x-data="{on:false}">
-                        <input type="checkbox" name="overwrite_by_phone" value="1" class="rounded border-input mt-0.5" x-model="on" />
-                        <div class="text-sm flex-1">
-                            <div class="font-medium">Update existing contacts by phone number</div>
-                            <div class="text-xs text-muted-foreground">If a contact with the same phone already exists, update it instead of creating a duplicate.</div>
-                            <div x-show="on" x-cloak class="mt-2">
-                                <label class="flex items-center gap-2 text-xs cursor-pointer">
-                                    <input type="checkbox" name="overwrite_empty_only" value="1" class="rounded border-input" />
-                                    <span><strong>Only fill empty fields</strong> — skip fields that already have a value</span>
-                                </label>
-                                <p class="text-xs text-muted-foreground mt-1">Leave unchecked to overwrite ALL fields (including name) with CSV values.</p>
+                    {{-- Duplicate / overwrite options (requires contact edit permission) --}}
+                    @can('contacts.update')
+                        <label class="flex items-start gap-3 rounded-md border border-input p-3 sm:col-span-2" x-data="{on:false}">
+                            <input type="checkbox" name="overwrite_by_phone" value="1" class="rounded border-input mt-0.5" x-model="on" />
+                            <div class="text-sm flex-1">
+                                <div class="font-medium">Update existing contacts by phone number</div>
+                                <div class="text-xs text-muted-foreground">If a contact with the same phone already exists, update it instead of creating a duplicate.</div>
+                                <div x-show="on" x-cloak class="mt-2">
+                                    <label class="flex items-center gap-2 text-xs cursor-pointer">
+                                        <input type="checkbox" name="overwrite_empty_only" value="1" class="rounded border-input" />
+                                        <span><strong>Only fill empty fields</strong> — skip fields that already have a value</span>
+                                    </label>
+                                    <p class="text-xs text-muted-foreground mt-1">Leave unchecked to overwrite ALL fields (including name) with CSV values.</p>
+                                </div>
                             </div>
-                        </div>
-                    </label>
+                        </label>
+                    @else
+                        <p class="text-xs text-muted-foreground sm:col-span-2">Rows are always added as new contacts — you don't have permission to update existing contacts.</p>
+                    @endcan
                 </x-ui.card-content>
             </x-ui.card>
 

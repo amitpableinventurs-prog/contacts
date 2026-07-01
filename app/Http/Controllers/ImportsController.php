@@ -180,7 +180,11 @@ class ImportsController extends Controller
         }
 
         $teamId          = $request->user()->current_team_id;
-        $overwriteByPhone  = ! empty($data['overwrite_by_phone']);
+        // Users who can't edit contacts (e.g. Clerks) may only create new
+        // contacts via import, never overwrite existing ones.
+        $canOverwrite    = Gate::allows('contacts.update');
+        $canCreateTags   = Gate::allows('manage-tags');
+        $overwriteByPhone  = $canOverwrite && ! empty($data['overwrite_by_phone']);
         $overwriteEmptyOnly = ! empty($data['overwrite_empty_only']);
         $created = 0;
         $updated = 0;
@@ -200,11 +204,14 @@ class ImportsController extends Controller
                     foreach (preg_split('/\s*,\s*/', $value) as $tagName) {
                         if ($tagName === '') continue;
                         $slug = Str::slug($tagName);
-                        $tagCache[$slug] ??= Tag::firstOrCreate(
-                            ['team_id' => $teamId, 'slug' => $slug],
-                            ['name' => $tagName]
-                        );
-                        $rowTags[] = $tagCache[$slug]->id;
+                        if (! array_key_exists($slug, $tagCache)) {
+                            $tagCache[$slug] = $canCreateTags
+                                ? Tag::firstOrCreate(['team_id' => $teamId, 'slug' => $slug], ['name' => $tagName])
+                                : Tag::where('team_id', $teamId)->where('slug', $slug)->first();
+                        }
+                        if ($tagCache[$slug]) {
+                            $rowTags[] = $tagCache[$slug]->id;
+                        }
                     }
                 } elseif ($field === 'phone') {
                     $attrs[$field] = preg_replace('/[^\d+]/', '', $value);

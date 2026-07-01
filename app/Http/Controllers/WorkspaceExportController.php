@@ -16,7 +16,12 @@ class WorkspaceExportController extends Controller
         $team = $request->user()->currentTeam;
         abort_unless($team, 404);
 
-        $contacts = Contact::where('team_id', $team->id)->with('group')->get();
+        $contacts = Contact::where('team_id', $team->id)
+            ->where(function ($q) {
+                $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
+            })
+            ->with('group')
+            ->get();
 
         $stem = preg_replace('/[^A-Za-z0-9-]/', '-', strtolower($team->name));
         $filename = "contacts-{$stem}-" . now()->format('Ymd') . ".csv";
