@@ -147,6 +147,13 @@ class AppServiceProvider extends ServiceProvider
                     'password'     => $s->smtp_password,
                     'timeout'      => null,
                     'local_domain' => env('MAIL_EHLO_DOMAIN'),
+                    'stream'       => [
+                        'ssl' => [
+                            'allow_self_signed' => true,
+                            'verify_peer'       => false,
+                            'verify_peer_name'  => false,
+                        ],
+                    ],
                 ]);
             }
             if ($mailer === 'resend')   { Config::set('services.resend.key', $s->api_key); }
