@@ -21,7 +21,8 @@ class DemoData
         $created = ['groups' => 0, 'tags' => 0, 'contacts' => 0, 'reminders' => 0];
 
         // Don't seed if the workspace already has contacts.
-        $existing = Contact::withoutTeamScope()->where('team_id', $team->id)->count();
+        // (Contact has no team global scope — plain team_id filter.)
+        $existing = Contact::where('team_id', $team->id)->count();
         if ($existing > 0) {
             return $created;
         }
@@ -99,7 +100,7 @@ class DemoData
         }
 
         // Reminders — a couple due today, one overdue, a couple upcoming
-        $reminderContacts = Contact::withoutTeamScope()->where('team_id', $team->id)->inRandomOrder()->take(5)->get();
+        $reminderContacts = Contact::where('team_id', $team->id)->inRandomOrder()->take(5)->get();
         $reminderTemplates = [
             ['title' => 'Follow up on intro call',        'offset' => -2],
             ['title' => 'Send proposal',                  'offset' => 0],

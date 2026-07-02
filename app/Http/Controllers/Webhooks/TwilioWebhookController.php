@@ -28,8 +28,8 @@ class TwilioWebhookController extends Controller
 
         Log::info('Twilio inbound message', compact('from', 'body', 'sid', 'channel'));
 
-        $contact = Contact::withoutTeamScope()
-            ->where('phone', $from)
+        // Contact has no team global scope — match across all teams.
+        $contact = Contact::where('phone', $from)
             ->orWhere('phone', preg_replace('/\D/', '', $from))
             ->first();
 
