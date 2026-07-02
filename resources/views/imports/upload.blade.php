@@ -12,7 +12,7 @@
             <x-ui.card>
                 <x-ui.card-header>
                     <x-ui.card-title>CSV or ZIP file</x-ui.card-title>
-                    <x-ui.card-description>Upload a CSV file or a ZIP containing a CSV. Max 10MB.</x-ui.card-description>
+                    <x-ui.card-description>Upload a CSV file or a ZIP containing a CSV. Max 50MB — large files (lakhs of rows) are imported in batches with a progress bar.</x-ui.card-description>
                 </x-ui.card-header>
                 <x-ui.card-content class="space-y-4">
                     <x-ui.input type="file" name="csv" accept=".csv,.zip,text/csv,application/zip" required />

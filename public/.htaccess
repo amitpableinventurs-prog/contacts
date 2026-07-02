@@ -1,3 +1,11 @@
+# Raise upload limits for large CSV imports when PHP runs as an Apache
+# module (e.g. local XAMPP). CGI/FPM hosts use public/.user.ini instead.
+<IfModule php_module>
+    php_value upload_max_filesize 64M
+    php_value post_max_size 64M
+    php_value memory_limit 256M
+</IfModule>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

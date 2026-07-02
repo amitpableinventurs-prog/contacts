@@ -15,7 +15,7 @@ class Contact extends Model
 
     protected $fillable = [
         'team_id', 'group_id', 'owner_id',
-        'name', 'email', 'phone',
+        'name', 'email', 'phone', 'phone_digits',
         'company', 'job_title', 'website', 'address', 'city',
         'photo', 'birthday', 'lifecycle_stage',
         'facebook', 'twitter', 'linkedin',
@@ -36,6 +36,24 @@ class Contact extends Model
         'last_contacted_at' => 'datetime',
         'approved_at'      => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        // Keep the indexed digits-only phone in sync for fast duplicate lookups.
+        static::saving(function (Contact $contact) {
+            $contact->phone_digits = $contact->phone
+                ? (preg_replace('/\D/', '', $contact->phone) ?: null)
+                : null;
+        });
+    }
+
+    /** Normalize a phone string to its digits for matching. */
+    public static function normalizePhone(?string $phone): ?string
+    {
+        $digits = preg_replace('/\D/', '', (string) $phone);
+
+        return $digits === '' ? null : $digits;
+    }
 
     public function isPending(): bool   { return $this->approval_status === 'pending'; }
     public function isApproved(): bool  { return $this->approval_status === 'approved'; }

@@ -108,6 +108,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/imports/template', [ImportsController::class, 'template'])->name('imports.template');
     Route::post('/imports/preview', [ImportsController::class, 'preview'])->name('imports.preview');
     Route::post('/imports', [ImportsController::class, 'store'])->name('imports.store');
+    Route::get('/imports/{import}/progress', [ImportsController::class, 'progress'])
+        ->where('import', '[A-Za-z0-9]{24}')->name('imports.progress');
+    Route::post('/imports/{import}/process', [ImportsController::class, 'process'])
+        ->where('import', '[A-Za-z0-9]{24}')->name('imports.process');
 
     // -------------------------------------------------------------------------
     // Emails

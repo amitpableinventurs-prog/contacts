@@ -42,8 +42,9 @@ class ContactsController extends Controller
     {
         Gate::authorize('viewAny', Contact::class);
 
-        $user   = Auth::user();
-        $teamId = $user->current_team_id;
+        $user    = Auth::user();
+        $teamId  = $user->current_team_id;
+        $isClerk = $user->isClerk();
 
         $perPage = 25;
 
@@ -51,28 +52,41 @@ class ContactsController extends Controller
 
         $number = trim((string) $request->input('number'));
 
-        if ($q = trim((string) $request->input('q'))) {
-            $query->where(function ($sub) use ($q) {
-                $sub->where('name',    'like', "%{$q}%")
-                    ->orWhere('email',   'like', "%{$q}%")
-                    ->orWhere('phone',   'like', "%{$q}%")
-                    ->orWhere('company', 'like', "%{$q}%")
-                    ->orWhere('city',    'like', "%{$q}%");
-            });
+        // Require a meaningful fragment from clerks so a one-digit search
+        // can't page through the whole workspace.
+        if ($isClerk && strlen($number) < 4) {
+            $number = '';
         }
+
+        // Clerks only get a basic phone-number search: no free-text search,
+        // no group/tag filters, and no browsable list without a number.
+        if (! $isClerk) {
+            if ($q = trim((string) $request->input('q'))) {
+                $query->where(function ($sub) use ($q) {
+                    $sub->where('name',    'like', "%{$q}%")
+                        ->orWhere('email',   'like', "%{$q}%")
+                        ->orWhere('phone',   'like', "%{$q}%")
+                        ->orWhere('company', 'like', "%{$q}%")
+                        ->orWhere('city',    'like', "%{$q}%");
+                });
+            }
+            if ($groupId = $request->input('group_id')) {
+                $query->where('group_id', $groupId);
+            }
+            if ($tagIds = $request->input('tags')) {
+                foreach ((array) $tagIds as $tagId) {
+                    $query->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId));
+                }
+            }
+        }
+
         if ($number !== '') {
             $query->where(function ($q) use ($number) {
                 $q->where('phone', 'like', "%{$number}%")
                   ->orWhere('number', 'like', "%{$number}%");
             });
-        }
-        if ($groupId = $request->input('group_id')) {
-            $query->where('group_id', $groupId);
-        }
-        if ($tagIds = $request->input('tags')) {
-            foreach ((array) $tagIds as $tagId) {
-                $query->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId));
-            }
+        } elseif ($isClerk) {
+            $query->whereRaw('1 = 0');
         }
 
         $query->where(function ($q) {
@@ -80,11 +94,12 @@ class ContactsController extends Controller
         });
 
         $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
-        $groups       = Group::where('team_id', $teamId)->orderBy('name')->get();
-        $tags         = Tag::where('team_id', $teamId)->orderBy('name')->get();
-        $pendingCount = $user->isClerk() ? 0 : Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count();
+        $groups       = $isClerk ? collect() : Group::where('team_id', $teamId)->orderBy('name')->get();
+        $tags         = $isClerk ? collect() : Tag::where('team_id', $teamId)->orderBy('name')->get();
+        $pendingCount = $isClerk ? 0 : Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count();
+        $clerkSearched = ! $isClerk || $number !== '';
 
-        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user'));
+        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user', 'clerkSearched'));
     }
 
     // ------------------------------------------------------------------
@@ -93,19 +108,28 @@ class ContactsController extends Controller
 
     public function autocomplete(Request $request): JsonResponse
     {
+        $user   = Auth::user();
+        $teamId = $user->current_team_id;
+
+        // Clerks may only look up contacts by phone number, and need a
+        // longer fragment so short queries can't sweep the workspace.
+        $isClerk = $user->isClerk();
+
         $q = $request->string('q')->trim();
-        if ($q->length() < 2) {
+        if ($q->length() < ($isClerk ? 4 : 2)) {
             return response()->json([]);
         }
 
-        $teamId = Auth::user()->current_team_id;
-
         return response()->json(
             Contact::where('team_id', $teamId)
-                ->where(fn ($query) => $query
-                    ->where('name', 'like', "%{$q}%")
-                    ->orWhere('phone', 'like', "%{$q}%")
-                    ->orWhere('email', 'like', "%{$q}%")
+                ->where(fn ($query) => $isClerk
+                    ? $query
+                        ->where('phone', 'like', "%{$q}%")
+                        ->orWhere('number', 'like', "%{$q}%")
+                    : $query
+                        ->where('name', 'like', "%{$q}%")
+                        ->orWhere('phone', 'like', "%{$q}%")
+                        ->orWhere('email', 'like', "%{$q}%")
                 )
                 ->orderBy('name')
                 ->limit(10)
@@ -547,6 +571,11 @@ class ContactsController extends Controller
     {
         Gate::authorize('viewAny', Contact::class);
 
+        // Clerks have search-only access — no bulk operations at all.
+        if (Auth::user()->isClerk()) {
+            abort(403, 'Clerks cannot perform bulk operations.');
+        }
+
         $teamId = Auth::user()->current_team_id;
         $action = $request->input('action');
         $ids    = $request->input('contact_ids', []);
@@ -554,13 +583,13 @@ class ContactsController extends Controller
         // Bulk delete by count (500 / 1000 / 3000 / 5000) — no checkbox ids needed.
         if ($action === 'delete_count') {
             Gate::authorize('viewAny', Contact::class);
-            $count   = min((int) $request->input('bulk_count', 500), 5000);
-            $deleted = Contact::where('team_id', $teamId)
+            $count = min((int) $request->input('bulk_count', 500), 5000);
+            // Soft-delete with a single UPDATE — no model hydration needed.
+            $ids = Contact::where('team_id', $teamId)
                 ->orderBy('id')
                 ->limit($count)
-                ->get()
-                ->each->delete()
-                ->count();
+                ->pluck('id');
+            $deleted = $ids->isEmpty() ? 0 : Contact::whereIn('id', $ids)->delete();
             return back()->with('toast', ['type' => 'success', 'message' => "{$deleted} contact(s) moved to trash."]);
         }
 
@@ -570,15 +599,10 @@ class ContactsController extends Controller
 
         $contacts = Contact::where('team_id', $teamId)->whereIn('id', $ids);
 
-        // Clerks may only trash contacts — block group/tag assignment.
-        if (in_array($action, ['group', 'tag']) && Auth::user()->isClerk()) {
-            abort(403, 'Clerks cannot assign groups or tags.');
-        }
-
         match ($action) {
             'group'  => $contacts->update(['group_id' => $request->input('group_id')]),
             'tag'    => $contacts->get()->each(fn ($c) => $c->tags()->syncWithoutDetaching([$request->input('tag_id')])),
-            'delete' => $contacts->get()->each->delete(),
+            'delete' => $contacts->delete(),
             default  => null,
         };
 
