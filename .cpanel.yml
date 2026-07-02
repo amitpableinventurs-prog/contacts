@@ -1,7 +1,7 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/sgmcjnpl/public_html/contacts
+    - export DEPLOYPATH=/home/sgmcjnpl/public_html/new_contacts
     - /bin/rsync -av --exclude='.git' --exclude='node_modules' --exclude='.env' --exclude='storage/app/public' . $DEPLOYPATH/
     - cp $DEPLOYPATH/public_htaccess $DEPLOYPATH/.htaccess
     - cd $DEPLOYPATH && composer install --no-dev --optimize-autoloader --no-interaction

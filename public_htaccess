@@ -2,11 +2,11 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Old URLs used /contacts/public/... — permanently redirect them to
-    # /contacts/... so bookmarks keep working. THE_REQUEST matches only the
-    # original browser request, never the internal rewrite below (no loop).
-    RewriteCond %{THE_REQUEST} \s/+contacts/public[/\s?]
-    RewriteRule ^public(?:/(.*))?$ /contacts/$1 [R=301,L]
+    # Old URLs used .../public/... — permanently redirect them to the app
+    # root so bookmarks keep working. THE_REQUEST matches only the original
+    # browser request, never the internal rewrite below (no loop).
+    RewriteCond %{THE_REQUEST} \s/+new_contacts/public[/\s?]
+    RewriteRule ^public(?:/(.*))?$ /new_contacts/$1 [R=301,L]
 
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
