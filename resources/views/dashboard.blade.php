@@ -1,11 +1,15 @@
 <x-app-layout>
     <x-slot:header>Dashboard</x-slot:header>
 
+    @php $isClerk = auth()->user()->isClerk(); @endphp
+
     <div class="flex items-start justify-center min-h-[60vh] pt-16">
         <div class="w-full max-w-lg space-y-6">
             <div class="text-center space-y-1">
                 <h1 class="text-2xl font-bold tracking-tight">Search Contact</h1>
-                <p class="text-sm text-muted-foreground">Enter a phone number or name to find a contact.</p>
+                <p class="text-sm text-muted-foreground">
+                    {{ $isClerk ? 'Enter a phone number to find a contact.' : 'Enter a phone number or name to find a contact.' }}
+                </p>
             </div>
 
             <form method="GET" action="{{ route('contacts.index') }}" class="flex gap-2">
@@ -15,18 +19,20 @@
                     </svg>
                     <input
                         type="text"
-                        name="q"
+                        name="{{ $isClerk ? 'number' : 'q' }}"
                         autofocus
-                        placeholder="Phone number or name…"
+                        placeholder="{{ $isClerk ? 'Phone number…' : 'Phone number or name…' }}"
                         class="flex h-11 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                 </div>
                 <x-ui.button type="submit" class="h-11 px-6">Search</x-ui.button>
             </form>
 
-            <div class="text-center">
-                <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">View all contacts →</a>
-            </div>
+            @unless ($isClerk)
+                <div class="text-center">
+                    <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">View all contacts →</a>
+                </div>
+            @endunless
         </div>
     </div>
 </x-app-layout>

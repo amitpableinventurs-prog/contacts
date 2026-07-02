@@ -19,9 +19,11 @@ class ContactPolicy
         return $contact->team_id === $user->current_team_id;
     }
 
+    // Manager and above can add contacts. Clerks cannot.
     public function create(User $user): bool
     {
-        return $user->current_team_id !== null;
+        return $user->current_team_id !== null
+            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
     // Only manager and above can edit contacts.

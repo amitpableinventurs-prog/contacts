@@ -60,12 +60,14 @@ class AppServiceProvider extends ServiceProvider
         );
 
         // ── Contacts ──────────────────────────────────────────────────────
-        // All roles can view/create/delete contacts and add notes/ratings.
+        // All roles can view contacts and add notes/ratings.
         Gate::define('contacts.viewAny', fn (User $user) =>
             $user->current_team_id !== null
         );
+        // Manager and above can add contacts. Clerks cannot.
         Gate::define('contacts.create', fn (User $user) =>
             $user->current_team_id !== null
+            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER)
         );
         Gate::define('contacts.view', fn (User $user) =>
             $user->current_team_id !== null
@@ -91,7 +93,9 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('manage-groups',    $managerPlus);
         Gate::define('manage-tags',      $managerPlus);
-        Gate::define('view-tags', fn (User $user) => $user->current_team_id !== null);
+        // Tags page shows per-tag contact counts — hidden from Clerks,
+        // who have search-only access to contacts.
+        Gate::define('view-tags',        $managerPlus);
         Gate::define('messaging',        $managerPlus);
         Gate::define('manage-calls',     $managerPlus);
         Gate::define('manage-emails',    $managerPlus);
@@ -101,17 +105,15 @@ class AppServiceProvider extends ServiceProvider
         // Manager can approve/reject contacts submitted by Clerks.
         Gate::define('approve-contacts', $managerPlus);
 
-        // ── Import / Export — Super Admin + Admin + Manager + Clerk ────────
+        // ── Import / Export — Super Admin + Admin + Manager ────────────────
         // Managers can import with full overwrite (they already have
-        // contacts.update + manage-tags). Clerks may only create new
-        // contacts via import (no overwrite, no new-tag creation) — see
-        // ImportsController::store(). Both can export the contacts they
-        // can already view.
+        // contacts.update + manage-tags). Clerks have search-only access:
+        // no import (adds contacts) and no export (dumps the full list).
         Gate::define('manage-imports', fn (User $user) =>
-            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER, Roles::CLERK)
+            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER)
         );
         Gate::define('manage-export', fn (User $user) =>
-            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER, Roles::CLERK)
+            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER)
         );
 
         // ── Audit / Activity logs ──────────────────────────────────────────

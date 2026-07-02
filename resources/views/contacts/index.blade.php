@@ -1,6 +1,8 @@
 <x-app-layout>
     <x-slot:header>Contacts</x-slot:header>
 
+    @php $isClerk = auth()->user()->isClerk(); @endphp
+
     <div class="space-y-4" x-data="{
         selected: [],
         get all() { return Array.from(document.querySelectorAll('[data-contact-checkbox]')).map(el => +el.value); },
@@ -31,9 +33,13 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Contacts</h1>
-                <p class="text-sm text-muted-foreground">
-                    {{ $contacts->total() }} {{ \Illuminate\Support\Str::plural('contact', $contacts->total()) }} in this workspace
-                </p>
+                @if ($isClerk)
+                    <p class="text-sm text-muted-foreground">Search contacts by phone number.</p>
+                @else
+                    <p class="text-sm text-muted-foreground">
+                        {{ $contacts->total() }} {{ \Illuminate\Support\Str::plural('contact', $contacts->total()) }} in this workspace
+                    </p>
+                @endif
             </div>
             <div class="flex items-center gap-2">
                 @can('manage-imports')
@@ -52,12 +58,14 @@
                         </x-ui.button>
                     </a>
                 @endcan
-                <a href="{{ route('contacts.create') }}">
-                    <x-ui.button>
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        Add contact
-                    </x-ui.button>
-                </a>
+                @can('create', \App\Models\Contact::class)
+                    <a href="{{ route('contacts.create') }}">
+                        <x-ui.button>
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Add contact
+                        </x-ui.button>
+                    </a>
+                @endcan
             </div>
         </div>
 
@@ -66,24 +74,28 @@
             <x-ui.card-content class="p-4">
                 <form method="GET" action="{{ route('contacts.index') }}">
                     <div class="flex flex-wrap items-center gap-2">
-                        <div class="flex-1 min-w-[160px]">
-                            <div class="relative">
-                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
-                                <x-ui.input name="q" value="{{ request('q') }}" placeholder="Name, email, company, city…" class="pl-9" />
+                        @unless ($isClerk)
+                            <div class="flex-1 min-w-[160px]">
+                                <div class="relative">
+                                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
+                                    <x-ui.input name="q" value="{{ request('q') }}" placeholder="Name, email, company, city…" class="pl-9" />
+                                </div>
                             </div>
-                        </div>
-                        <div class="w-full sm:w-44">
+                        @endunless
+                        <div class="{{ $isClerk ? 'flex-1 min-w-[160px]' : 'w-full sm:w-44' }}">
                             <div class="relative">
                                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                 <x-ui.input name="number" value="{{ request('number') }}" placeholder="Phone number…" class="pl-9" />
                             </div>
                         </div>
-                        <select name="group_id" class="flex h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
-                            <option value="">All groups</option>
-                            @foreach ($groups as $group)
-                                <option value="{{ $group->id }}" @selected(request('group_id') == $group->id)>{{ $group->name }}</option>
-                            @endforeach
-                        </select>
+                        @unless ($isClerk)
+                            <select name="group_id" class="flex h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
+                                <option value="">All groups</option>
+                                @foreach ($groups as $group)
+                                    <option value="{{ $group->id }}" @selected(request('group_id') == $group->id)>{{ $group->name }}</option>
+                                @endforeach
+                            </select>
+                        @endunless
                         <x-ui.button type="submit" variant="secondary">Search</x-ui.button>
                         @if (request()->hasAny(['q','number','group_id','tags']))
                             <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground">Clear</a>
@@ -218,22 +230,36 @@
                     <div class="mx-auto h-12 w-12 rounded-full bg-muted grid place-items-center mb-3">
                         <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                     </div>
-                    <h3 class="text-base font-medium">No contacts yet</h3>
-                    <p class="text-sm text-muted-foreground mt-1 mb-4">Add your first contact to get started.</p>
-                    <a href="{{ route('contacts.create') }}">
-                        <x-ui.button>Add contact</x-ui.button>
-                    </a>
+                    @if ($isClerk)
+                        @if (! ($clerkSearched ?? true))
+                            <h3 class="text-base font-medium">Search by phone number</h3>
+                            <p class="text-sm text-muted-foreground mt-1">Enter at least 4 digits of a phone number to look up a contact.</p>
+                        @else
+                            <h3 class="text-base font-medium">No match found</h3>
+                            <p class="text-sm text-muted-foreground mt-1">No contact matches that phone number.</p>
+                        @endif
+                    @else
+                        <h3 class="text-base font-medium">No contacts yet</h3>
+                        <p class="text-sm text-muted-foreground mt-1 mb-4">Add your first contact to get started.</p>
+                        @can('create', \App\Models\Contact::class)
+                            <a href="{{ route('contacts.create') }}">
+                                <x-ui.button>Add contact</x-ui.button>
+                            </a>
+                        @endcan
+                    @endif
                 </div>
             @else
                 <x-ui.table>
                     <x-ui.table-header>
                         <x-ui.table-row class="hover:bg-transparent">
-                            <x-ui.table-head class="w-10">
-                                <input type="checkbox"
-                                       @change="toggleAll($event.target.checked)"
-                                       :checked="selected.length === all.length && all.length > 0"
-                                       class="rounded border-input" />
-                            </x-ui.table-head>
+                            @unless ($isClerk)
+                                <x-ui.table-head class="w-10">
+                                    <input type="checkbox"
+                                           @change="toggleAll($event.target.checked)"
+                                           :checked="selected.length === all.length && all.length > 0"
+                                           class="rounded border-input" />
+                                </x-ui.table-head>
+                            @endunless
                             <x-ui.table-head>Name</x-ui.table-head>
                             <x-ui.table-head class="hidden md:table-cell">Company</x-ui.table-head>
                             <x-ui.table-head class="hidden lg:table-cell">Group</x-ui.table-head>
@@ -265,14 +291,16 @@
                                 }
                             @endphp
                             <x-ui.table-row style="{{ $rowStyle }}">
-                                <x-ui.table-cell>
-                                    <input type="checkbox"
-                                           data-contact-checkbox
-                                           value="{{ $contact->id }}"
-                                           :checked="isChecked({{ $contact->id }})"
-                                           @change="toggle({{ $contact->id }}, $event.target.checked)"
-                                           class="rounded border-input" />
-                                </x-ui.table-cell>
+                                @unless ($isClerk)
+                                    <x-ui.table-cell>
+                                        <input type="checkbox"
+                                               data-contact-checkbox
+                                               value="{{ $contact->id }}"
+                                               :checked="isChecked({{ $contact->id }})"
+                                               @change="toggle({{ $contact->id }}, $event.target.checked)"
+                                               class="rounded border-input" />
+                                    </x-ui.table-cell>
+                                @endunless
                                 <x-ui.table-cell>
                                     <a href="{{ route('contacts.show', $contact) }}" class="flex items-center gap-3 group">
                                         <x-ui.avatar :name="$contact->name" :src="$contact->photo" size="sm" />
