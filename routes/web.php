@@ -40,8 +40,9 @@ Route::get('/install/admin', [InstallerController::class, 'admin'])->name('insta
 Route::post('/install/admin', [InstallerController::class, 'saveAdmin'])->name('install.admin.save');
 Route::get('/install/finish', [InstallerController::class, 'finish'])->name('install.finish');
 
-// Webhooks (public, no auth)
-Route::post('/webhooks/twilio/sms', [TwilioWebhookController::class, 'incomingSms'])->name('webhooks.twilio.sms');
+// Webhooks (public, no auth — authenticity checked via Twilio signature)
+Route::post('/webhooks/twilio/sms', [TwilioWebhookController::class, 'incomingSms'])
+    ->middleware('twilio.signature')->name('webhooks.twilio.sms');
 
 // Email tracking pixel (public)
 Route::get('/track/{trackingId}', [TrackingController::class, 'emailPixel'])->name('tracking.email');
