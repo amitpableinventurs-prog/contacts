@@ -1,0 +1,53 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never run two deploys at once; queue instead.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 20m
+          script: |
+            set -e
+
+            DEPLOY_PATH="$HOME/public_html/contacts"
+
+            echo "==> Pulling latest code..."
+            cd "$DEPLOY_PATH"
+            git pull origin main
+
+            echo "==> Routing requests through public/..."
+            cp public_htaccess .htaccess
+
+            echo "==> Installing PHP dependencies..."
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            echo "==> Running migrations..."
+            php artisan migrate --force
+
+            echo "==> Refreshing caches..."
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:clear
+
+            echo "==> Linking storage..."
+            php artisan storage:link --force 2>/dev/null || true
+
+            echo "==> Deployed $(git rev-parse --short HEAD) successfully."
