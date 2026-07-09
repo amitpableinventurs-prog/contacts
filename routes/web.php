@@ -48,11 +48,9 @@ Route::post('/webhooks/twilio/sms', [TwilioWebhookController::class, 'incomingSm
 Route::get('/track/{trackingId}', [TrackingController::class, 'emailPixel'])->name('tracking.email');
 
 
-// Redirect root to login for guests, dashboard for authenticated users
-Route::get('/', fn () => auth()->check()
-    ? redirect()->route('dashboard')
-    : redirect()->route('login')
-);
+// Root → dashboard; guests get bounced to login by the auth middleware.
+// Kept closure-free so the cached route survives serialization everywhere.
+Route::redirect('/', '/dashboard');
 
 Route::middleware(['auth'])->group(function () {
 

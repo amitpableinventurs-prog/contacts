@@ -73,4 +73,7 @@ jobs:
               fi
             fi
 
+            echo "==> Restarting PHP workers (clears opcache)..."
+            pkill -u "$(whoami)" lsphp 2>/dev/null || true
+
             echo "==> Deployed $(git rev-parse --short HEAD) successfully."
