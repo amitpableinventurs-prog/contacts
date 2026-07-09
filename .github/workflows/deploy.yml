@@ -37,7 +37,17 @@ jobs:
             cp public_htaccess .htaccess
 
             echo "==> Installing PHP dependencies..."
-            composer install --no-dev --optimize-autoloader --no-interaction
+            # cPanel shells often don't have composer in PATH; fall back to
+            # the standard cPanel location and run the phar through php.
+            if command -v composer >/dev/null 2>&1; then
+              COMPOSER_BIN="$(command -v composer)"
+            elif [ -e /opt/cpanel/composer/bin/composer ]; then
+              COMPOSER_BIN=/opt/cpanel/composer/bin/composer
+            else
+              echo "composer not found on server" >&2
+              exit 1
+            fi
+            php "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-interaction
 
             echo "==> Running migrations..."
             php artisan migrate --force

@@ -1,0 +1,39 @@
+name: Diagnose server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: SSH Diagnose
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Inspect server state
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 5m
+          script: |
+            cd "$HOME/public_html/new_contacts"
+            echo "=== git status ==="
+            git log --oneline -1; git status --short | head -20
+            echo "=== root .htaccess ==="
+            cat .htaccess
+            echo "=== public/.htaccess ==="
+            cat public/.htaccess
+            echo "=== php ==="
+            php -v | head -1
+            echo "=== composer candidates ==="
+            command -v composer || true
+            ls /opt/cpanel/composer/bin/composer 2>/dev/null || true
+            ls "$HOME/bin/composer" 2>/dev/null || true
+            echo "=== .env / caches ==="
+            ls -la .env bootstrap/cache/ | head -15
+            echo "=== laravel.log tail ==="
+            tail -n 80 storage/logs/laravel.log 2>/dev/null || echo "(no laravel.log)"
+            echo "=== artisan ==="
+            php artisan --version || true
