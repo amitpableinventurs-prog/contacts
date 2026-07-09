@@ -67,8 +67,9 @@
 
                     {{-- Duplicate / overwrite options (requires contact edit permission) --}}
                     @can('contacts.update')
-                        <label class="flex items-start gap-3 rounded-md border border-input p-3 sm:col-span-2" x-data="{on:false}">
-                            <input type="checkbox" name="overwrite_by_phone" value="1" class="rounded border-input mt-0.5" x-model="on" />
+                        {{-- Checked by default: re-importing an edited CSV should update matching contacts, not duplicate them. --}}
+                        <label class="flex items-start gap-3 rounded-md border border-input p-3 sm:col-span-2" x-data="{on:true}">
+                            <input type="checkbox" name="overwrite_by_phone" value="1" checked class="rounded border-input mt-0.5" x-model="on" />
                             <div class="text-sm flex-1">
                                 <div class="font-medium">Update existing contacts by phone number</div>
                                 <div class="text-xs text-muted-foreground">If a contact with the same phone already exists, update it instead of creating a duplicate.</div>
