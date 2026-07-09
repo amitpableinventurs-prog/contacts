@@ -32,6 +32,29 @@ if (str_ends_with($script, '/public/index.php')) {
     }
 }
 
+// Temporary routing probe: boots the app and reports what the router sees.
+if (isset($_GET['__probe2'])) {
+    require __DIR__.'/../vendor/autoload.php';
+    $app = require_once __DIR__.'/../bootstrap/app.php';
+    $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+    $req = Request::capture();
+    $out = [
+        'method'   => $req->getMethod(),
+        'pathInfo' => $req->getPathInfo(),
+        'baseUrl'  => $req->getBaseUrl(),
+        'path'     => $req->path(),
+    ];
+    try {
+        $route = app('router')->getRoutes()->match($req);
+        $out['matched'] = implode('|', $route->methods()).' '.$route->uri();
+    } catch (Throwable $e) {
+        $out['exception'] = get_class($e).': '.$e->getMessage();
+    }
+    header('Content-Type: application/json');
+    echo json_encode($out);
+    exit;
+}
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
