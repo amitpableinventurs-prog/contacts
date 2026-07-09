@@ -62,4 +62,15 @@ jobs:
             echo "==> Linking storage..."
             php artisan storage:link --force 2>/dev/null || true
 
+            # The install wizard is gated on this lock file. If it's missing
+            # but the DB already has users, the app was installed before the
+            # file went missing (e.g. fresh clone) — restore it.
+            if [ ! -f storage/app/installed.lock ]; then
+              USERS=$(php artisan tinker --execute='echo \App\Models\User::count();' 2>/dev/null | tail -1)
+              if [ "$USERS" -ge 1 ] 2>/dev/null; then
+                printf '{"installed_at":"%s","admin":"restored-by-deploy","version":"2.0"}\n' "$(date -Iseconds)" > storage/app/installed.lock
+                echo "==> Restored installed.lock ($USERS users in DB)"
+              fi
+            fi
+
             echo "==> Deployed $(git rev-parse --short HEAD) successfully."
