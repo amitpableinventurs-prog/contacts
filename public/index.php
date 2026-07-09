@@ -22,6 +22,14 @@ if ($reqPath === '/new_contacts/public' || $reqPath === '/new_contacts/public/')
     exit;
 }
 
+// The hosting stack mismatches GET against the cached root route (GET on "/"
+// 405s while all other methods match), so send the app root to /dashboard
+// before the router — auth middleware bounces guests to the login page.
+if ($reqPath === '/new_contacts/' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && ! isset($_GET['__probe2'])) {
+    header('Location: /new_contacts/dashboard', true, 302);
+    exit;
+}
+
 // Clean-form request (no /public/ in the URL): report the front controller
 // at the app prefix so Symfony computes baseUrl=/new_contacts.
 if (str_ends_with($script, '/public/index.php')) {
@@ -49,6 +57,13 @@ if (isset($_GET['__probe2'])) {
         $out['matched'] = implode('|', $route->methods()).' '.$route->uri();
     } catch (Throwable $e) {
         $out['exception'] = get_class($e).': '.$e->getMessage();
+    }
+    $out['routes_cached'] = app()->routesAreCached();
+    $out['slash_routes'] = [];
+    foreach (app('router')->getRoutes()->getRoutes() as $rt) {
+        if ($rt->uri() === '/') {
+            $out['slash_routes'][] = implode('|', $rt->methods()).' -> '.$rt->getActionName();
+        }
     }
     header('Content-Type: application/json');
     echo json_encode($out);
