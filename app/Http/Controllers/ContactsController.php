@@ -54,7 +54,7 @@ class ContactsController extends Controller
 
         // Require a meaningful fragment from clerks so a one-digit search
         // can't page through the whole workspace.
-        if ($isClerk && strlen($number) < 4) {
+        if ($isClerk && strlen($number) < 6) {
             $number = '';
         }
 
@@ -124,7 +124,7 @@ class ContactsController extends Controller
         $isClerk = $user->isClerk();
 
         $q = $request->string('q')->trim();
-        if ($q->length() < ($isClerk ? 4 : 2)) {
+        if ($q->length() < ($isClerk ? 6 : 2)) {
             return response()->json([]);
         }
 
