@@ -42,3 +42,7 @@ jobs:
             tail -n 80 storage/logs/laravel.log 2>/dev/null || echo "(no laravel.log)"
             echo "=== artisan ==="
             php artisan --version || true
+            echo "=== install state ==="
+            ls -la storage/app/installed.lock 2>/dev/null || echo "(no installed.lock)"
+            echo "=== db data ==="
+            php artisan tinker --execute='echo "users=", \App\Models\User::count(), " contacts=", \App\Models\Contact::count(), "\n";' 2>&1 | tail -3 || true
