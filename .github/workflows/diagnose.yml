@@ -46,3 +46,6 @@ jobs:
             ls -la storage/app/installed.lock 2>/dev/null || echo "(no installed.lock)"
             echo "=== db data ==="
             php artisan tinker --execute='echo "users=", \App\Models\User::count(), " contacts=", \App\Models\Contact::count(), "\n";' 2>&1 | tail -3 || true
+            echo "=== root route on server ==="
+            php artisan route:list --path=/ 2>&1 | head -6
+            php artisan tinker --execute='try { $r = app("router")->getRoutes()->match(Illuminate\Http\Request::create("/", "GET")); echo "matched: ", implode("|", $r->methods()), " -> ", ($r->getActionName() ?: "closure"), "\n"; } catch (\Throwable $e) { echo get_class($e), ": ", $e->getMessage(), "\n"; }' 2>&1 | tail -3 || true
