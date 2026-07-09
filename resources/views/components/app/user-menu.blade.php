@@ -12,7 +12,7 @@
         </div>
         <x-ui.dropdown-menu-separator />
         <x-ui.dropdown-menu-item :href="route('profile.edit')">Profile</x-ui.dropdown-menu-item>
-        @if (!auth()->user()->isManager())
+        @if (auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN))
             <x-ui.dropdown-menu-item :href="route('api-tokens.index')">API tokens</x-ui.dropdown-menu-item>
         @endif
         @if (auth()->user()->isSuperAdmin())
