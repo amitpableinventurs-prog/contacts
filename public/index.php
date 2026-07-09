@@ -5,18 +5,31 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Temporary server-vars probe for debugging the hosting rewrite chain.
-if (isset($_GET['__probe'])) {
-    header('Content-Type: application/json');
-    echo json_encode([
-        'method'      => $_SERVER['REQUEST_METHOD'] ?? null,
-        'request_uri' => $_SERVER['REQUEST_URI'] ?? null,
-        'script_name' => $_SERVER['SCRIPT_NAME'] ?? null,
-        'php_self'    => $_SERVER['PHP_SELF'] ?? null,
-        'path_info'   => $_SERVER['PATH_INFO'] ?? null,
-        'orig_uri'    => $_SERVER['X-LSCACHE_ORIG_URI'] ?? ($_SERVER['ORIG_PATH_INFO'] ?? null),
-    ]);
+// ---------------------------------------------------------------------------
+// Shared-hosting URL normalization. Production (LiteSpeed) serves this app
+// from a subfolder and rewrites /new_contacts/* into public/*, but PHP still
+// reports SCRIPT_NAME as .../public/index.php, so Symfony can't derive the
+// base URL for the clean (no /public/) form. The .htaccess 301 for the bare
+// /public/ URL also never fires on LiteSpeed, so both are handled here.
+// ---------------------------------------------------------------------------
+$reqPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+$script  = $_SERVER['SCRIPT_NAME'] ?? '';
+
+// Bare .../new_contacts/public[/] → permanent redirect to the clean app root.
+if ($reqPath === '/new_contacts/public' || $reqPath === '/new_contacts/public/') {
+    $qs = ($_SERVER['QUERY_STRING'] ?? '') !== '' ? '?'.$_SERVER['QUERY_STRING'] : '';
+    header('Location: /new_contacts/'.$qs, true, 301);
     exit;
+}
+
+// Clean-form request (no /public/ in the URL): report the front controller
+// at the app prefix so Symfony computes baseUrl=/new_contacts.
+if (str_ends_with($script, '/public/index.php')) {
+    $publicPrefix = substr($script, 0, -strlen('/index.php')); // .../public
+    if (! str_starts_with($reqPath, $publicPrefix)) {
+        $_SERVER['SCRIPT_NAME'] = substr($publicPrefix, 0, -strlen('/public')).'/index.php';
+        $_SERVER['PHP_SELF']    = $_SERVER['SCRIPT_NAME'];
+    }
 }
 
 // Determine if the application is in maintenance mode...
