@@ -93,6 +93,14 @@ class ContactsController extends Controller
             $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
         });
 
+        // Blacklisted (banned) contacts are hidden from Clerks; managers and
+        // above still see them so the blacklist stays manageable.
+        if ($isClerk) {
+            $query->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', '!=', 'banned');
+            });
+        }
+
         $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
         $groups       = $isClerk ? collect() : Group::where('team_id', $teamId)->orderBy('name')->get();
         $tags         = $isClerk ? collect() : Tag::where('team_id', $teamId)->orderBy('name')->get();
@@ -131,6 +139,10 @@ class ContactsController extends Controller
                         ->orWhere('phone', 'like', "%{$q}%")
                         ->orWhere('email', 'like', "%{$q}%")
                 )
+                // Clerks never see blacklisted (banned) contacts.
+                ->when($isClerk, fn ($query) => $query->where(
+                    fn ($sub) => $sub->whereNull('status')->orWhere('status', '!=', 'banned')
+                ))
                 ->orderBy('name')
                 ->limit(10)
                 ->get(['id', 'name', 'phone', 'email'])

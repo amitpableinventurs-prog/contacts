@@ -92,6 +92,29 @@ it('bulk-assigns contacts to a group', function () {
     expect(Contact::where('group_id', $group->id)->count())->toBe(2);
 });
 
+it('hides banned contacts from clerk search but not from admins', function () {
+    Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'name'    => 'Blocked Person',
+        'phone'   => '9503466923',
+        'status'  => 'banned',
+    ]);
+
+    $clerk = \App\Models\User::factory()->create([
+        'role' => \App\Support\Roles::CLERK,
+        'current_team_id' => $this->user->current_team_id,
+    ])->fresh();
+
+    // Clerk: number search and autocomplete both come back empty.
+    $this->actingAs($clerk);
+    $this->get('/contacts?number=9503466923')->assertOk()->assertDontSee('Blocked Person');
+    expect($this->getJson('/contacts/autocomplete?q=9503466923')->json())->toHaveCount(0);
+
+    // Admin still finds the banned contact to manage the blacklist.
+    $this->actingAs($this->user);
+    $this->get('/contacts?number=9503466923')->assertOk()->assertSee('Blocked Person');
+});
+
 it('detects duplicate contacts by email', function () {
     $a = Contact::factory()->create(['team_id' => $this->user->current_team_id, 'email' => 'same@example.com']);
     Contact::factory()->create(['team_id' => $this->user->current_team_id, 'email' => 'same@example.com']);
