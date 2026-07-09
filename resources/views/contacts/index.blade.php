@@ -243,8 +243,7 @@
                                 <x-ui.button type="submit">Search</x-ui.button>
                             </form>
                         @else
-                            <h3 class="text-base font-medium">No match found</h3>
-                            <p class="text-sm text-muted-foreground mt-1">No contact matches that phone number.</p>
+                            <h3 class="text-base font-medium">Enter correct number</h3>
                         @endif
                     @else
                         <h3 class="text-base font-medium">No contacts yet</h3>
