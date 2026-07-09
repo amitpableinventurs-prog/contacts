@@ -33,6 +33,11 @@ jobs:
             ls "$HOME/bin/composer" 2>/dev/null || true
             echo "=== .env / caches ==="
             ls -la .env bootstrap/cache/ | head -15
+            echo "=== vendor ==="
+            ls -d vendor 2>/dev/null && ls vendor | head -5 || echo "(no vendor dir)"
+            echo "=== php error_log tails ==="
+            tail -n 10 public/error_log 2>/dev/null || true
+            tail -n 10 bootstrap/error_log 2>/dev/null || true
             echo "=== laravel.log tail ==="
             tail -n 80 storage/logs/laravel.log 2>/dev/null || echo "(no laravel.log)"
             echo "=== artisan ==="
