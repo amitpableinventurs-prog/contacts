@@ -113,5 +113,7 @@ $primaryHsl = \App\Support\ColorHelper::hexToHslVar($brand->primary_color);
     @endif
 @endauth
 
+@stack('scripts')
+
 </body>
 </html>

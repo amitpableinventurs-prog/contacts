@@ -32,7 +32,8 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="phone">Phone / Number <span class="text-destructive">*</span></x-ui.label>
-                        <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="+91 98765 43210" required autofocus />
+                        <input type="hidden" id="phone_country" name="phone_country" value="{{ old('phone_country', $contact?->phone_country ?: 'in') }}" />
+                        <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="98765 43210" required autofocus />
                         @error('phone') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
@@ -53,10 +54,24 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                         <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" />
                     </div>
 
-                    <div class="space-y-1.5">
+                    <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="address">Address</x-ui.label>
-                        <x-ui.input id="address" name="address" value="{{ old('address', $contact?->address) }}" />
+                        <x-ui.textarea id="address" name="address" rows="2">{{ old('address', $contact?->address) }}</x-ui.textarea>
                     </div>
+
+                    {{-- Comment: every role sees it, only Super Admin can edit --}}
+                    @if (auth()->user()->isSuperAdmin())
+                        <div class="space-y-1.5 sm:col-span-2">
+                            <x-ui.label for="admin_comment">Comment <span class="text-xs font-normal text-muted-foreground">(visible to all roles — only Super Admin can edit)</span></x-ui.label>
+                            <x-ui.textarea id="admin_comment" name="admin_comment" rows="2">{{ old('admin_comment', $contact?->admin_comment) }}</x-ui.textarea>
+                            @error('admin_comment') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                        </div>
+                    @elseif ($contact?->admin_comment)
+                        <div class="space-y-1.5 sm:col-span-2">
+                            <x-ui.label>Comment <span class="text-xs font-normal text-muted-foreground">(only Super Admin can edit)</span></x-ui.label>
+                            <p class="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm whitespace-pre-line">{{ $contact->admin_comment }}</p>
+                        </div>
+                    @endif
                 </div>
             </x-ui.card-content>
         </x-ui.card>
@@ -279,6 +294,17 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
     <x-ui.button type="submit">{{ $contact ? 'Save changes' : 'Create contact' }}</x-ui.button>
 </div>
 
+@push('head')
+<link rel="stylesheet" href="{{ asset('vendor/intl-tel-input/css/intlTelInput.min.css') }}" />
+<style>
+    .iti { width: 100%; }
+    .iti__dropdown-content { background-color: hsl(var(--card)); border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); }
+    .iti__country--highlight, .iti__country:hover { background-color: hsl(var(--accent)); }
+    .iti__search-input { background-color: transparent; color: hsl(var(--foreground)); }
+    .iti__dial-code { color: hsl(var(--muted-foreground)); }
+</style>
+@endpush
+
 @push('scripts')
 <script>
 function htmlEditor(fieldName) {
@@ -296,5 +322,36 @@ function htmlEditor(fieldName) {
         }
     };
 }
+</script>
+<script src="{{ asset('vendor/intl-tel-input/js/intlTelInputWithUtils.min.js') }}"></script>
+<script>
+(function () {
+    const input = document.getElementById('phone');
+    const countryField = document.getElementById('phone_country');
+    if (!input || !countryField || !window.intlTelInput) return;
+
+    const iti = window.intlTelInput(input, {
+        initialCountry: countryField.value || 'in',
+        separateDialCode: true,
+        countryOrder: ['in', 'us', 'gb', 'ae', 'sa', 'sg'],
+    });
+
+    const syncCountry = function () {
+        const c = iti.getSelectedCountry();
+        if (c && c.iso2) countryField.value = c.iso2;
+    };
+    input.addEventListener('countrychange', syncCountry);
+    // A legacy "+xx…" value can override the initial country during init.
+    syncCountry();
+
+    // Store bare digits — spaces from as-you-type formatting would break
+    // the LIKE-based phone search.
+    const form = input.closest('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            input.value = input.value.replace(/[^0-9]/g, '');
+        });
+    }
+})();
 </script>
 @endpush

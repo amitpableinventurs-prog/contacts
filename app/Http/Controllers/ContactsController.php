@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ContactsController extends Controller
@@ -423,6 +424,11 @@ class ContactsController extends Controller
             'note_html'  => $request->input('note_html'),
         ]);
 
+        ActivityLogger::log('note.added', $contact, [
+            'name' => $contact->name,
+            'note' => Str::limit($request->input('note_html'), 100),
+        ]);
+
         return back()->with('toast', ['type' => 'success', 'message' => 'Note added.']);
     }
 
@@ -432,6 +438,9 @@ class ContactsController extends Controller
         abort_unless($note->contact_id === $contact->id, 403);
 
         $note->delete();
+
+        ActivityLogger::log('note.deleted', $contact, ['name' => $contact->name]);
+
         return back()->with('toast', ['type' => 'success', 'message' => 'Note deleted.']);
     }
 
@@ -666,6 +675,7 @@ class ContactsController extends Controller
             'name'                 => ['required', 'string', 'max:255'],
             'email'                => ['nullable', 'email', 'max:255'],
             'phone'                => ['required', 'string', 'max:50'],
+            'phone_country'        => ['nullable', 'string', 'size:2', 'alpha'],
             'company'              => ['nullable', 'string', 'max:255'],
             'job_title'            => ['nullable', 'string', 'max:255'],
             'website'              => ['nullable', 'url', 'max:255'],
@@ -680,11 +690,18 @@ class ContactsController extends Controller
             'twitter'              => ['nullable', 'string', 'max:255'],
             'linkedin'             => ['nullable', 'string', 'max:255'],
             'notes'                => ['nullable', 'string'],
+            'admin_comment'        => ['nullable', 'string', 'max:2000'],
             'description_html'     => ['nullable', 'string'],
             'custom_fields_keys'   => ['nullable', 'array'],
             'custom_fields_keys.*' => ['nullable', 'string', 'max:100'],
             'custom_fields_values' => ['nullable', 'array'],
         ]);
+
+        // The admin comment is visible to everyone but only Super Admin can
+        // change it — drop it from the payload for every other role.
+        if (! Auth::user()->isSuperAdmin()) {
+            unset($data['admin_comment']);
+        }
 
         $keys   = $data['custom_fields_keys'] ?? [];
         $values = $request->input('custom_fields_values', []);

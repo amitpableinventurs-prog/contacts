@@ -50,6 +50,7 @@ it('updates a contact', function () {
     $this->put(route('contacts.update', $c), [
         'name' => 'Renamed',
         'email' => $c->email,
+        'phone' => '9998887776',
     ])->assertRedirect();
     expect($c->fresh()->name)->toBe('Renamed');
 });
@@ -115,6 +116,14 @@ it('hides banned contacts from clerk search but not from admins', function () {
     $this->get('/contacts?number=9503466923')->assertOk()->assertSee('Blocked Person');
 });
 
+it('shows the saved address in the edit form textarea', function () {
+    $c = Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'address' => '12 Main Road, Kothrud',
+    ]);
+    $this->get(route('contacts.edit', $c))->assertOk()->assertSee('12 Main Road, Kothrud');
+});
+
 it('detects duplicate contacts by email', function () {
     $a = Contact::factory()->create(['team_id' => $this->user->current_team_id, 'email' => 'same@example.com']);
     Contact::factory()->create(['team_id' => $this->user->current_team_id, 'email' => 'same@example.com']);
@@ -132,4 +141,105 @@ it('merges duplicates and reassigns activity', function () {
     $keep->refresh();
     expect($keep->company)->toBe('Acme');
     expect(Contact::find($dup->id))->toBeNull();
+});
+
+it('lets super admin set the comment and shows it to every role', function () {
+    $sa = makeUser(['role' => \App\Support\Roles::SUPER_ADMIN]);
+    $this->actingAs($sa);
+    $contact = Contact::factory()->create(['team_id' => $sa->current_team_id]);
+
+    $this->put(route('contacts.update', $contact), [
+        'name'          => $contact->name,
+        'phone'         => '9503466923',
+        'phone_country' => 'in',
+        'admin_comment' => 'VIP customer — handle with care.',
+    ])->assertRedirect();
+
+    expect($contact->fresh()->admin_comment)->toBe('VIP customer — handle with care.');
+
+    // A clerk (lowest role) sees the comment on the contact page.
+    $clerk = makeClerkOnTeam($sa->current_team_id);
+    $this->actingAs($clerk)
+        ->get(route('contacts.show', $contact))
+        ->assertOk()
+        ->assertSee('VIP customer — handle with care.');
+});
+
+it('ignores the comment field for non-super-admin editors', function () {
+    $contact = Contact::factory()->create([
+        'team_id'       => $this->user->current_team_id,
+        'admin_comment' => 'Original comment',
+    ]);
+
+    // $this->user is an Admin — may edit the contact but not the comment.
+    $this->put(route('contacts.update', $contact), [
+        'name'          => $contact->name,
+        'phone'         => '9503466923',
+        'admin_comment' => 'Overwritten comment',
+    ])->assertRedirect();
+
+    expect($contact->fresh()->admin_comment)->toBe('Original comment');
+});
+
+it('saves the phone country with the contact', function () {
+    $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
+
+    $this->put(route('contacts.update', $contact), [
+        'name'          => $contact->name,
+        'phone'         => '4155551234',
+        'phone_country' => 'us',
+    ])->assertRedirect();
+
+    expect($contact->fresh()->phone_country)->toBe('us');
+});
+
+it('lets a clerk add a note to a contact and records it in the activity log', function () {
+    $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
+    $clerk = makeClerkOnTeam($this->user->current_team_id);
+
+    $this->actingAs($clerk);
+
+    // Clerk sees the add-note form on the contact page.
+    $this->get(route('contacts.show', $contact))->assertOk()->assertSee('Add note');
+
+    $this->post(route('contacts.notes.store', $contact), [
+        'note_html' => 'Spoke on the phone, call back tomorrow.',
+    ])->assertRedirect();
+
+    $note = \App\Models\ContactNote::where('contact_id', $contact->id)->firstOrFail();
+    expect($note->user_id)->toBe($clerk->id);
+
+    // The note shows up in the clerk's performance/activity logs.
+    expect(\App\Models\ActivityLog::where('user_id', $clerk->id)->where('action', 'note.added')->count())->toBe(1);
+});
+
+it('blocks clerks from deleting notes', function () {
+    $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
+    $note = \App\Models\ContactNote::create([
+        'team_id'    => $contact->team_id,
+        'contact_id' => $contact->id,
+        'user_id'    => $this->user->id,
+        'note_html'  => 'Manager note.',
+    ]);
+
+    $clerk = makeClerkOnTeam($this->user->current_team_id);
+
+    $this->actingAs($clerk)
+        ->delete(route('contacts.notes.destroy', [$contact, $note]))
+        ->assertForbidden();
+});
+
+it('logs note deletion by managers and above', function () {
+    $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
+    $note = \App\Models\ContactNote::create([
+        'team_id'    => $contact->team_id,
+        'contact_id' => $contact->id,
+        'user_id'    => $this->user->id,
+        'note_html'  => 'Old note.',
+    ]);
+
+    $this->delete(route('contacts.notes.destroy', [$contact, $note]))->assertRedirect();
+
+    expect(\App\Models\ContactNote::find($note->id))->toBeNull()
+        ->and(\App\Models\ActivityLog::where('action', 'note.deleted')->count())->toBe(1);
 });

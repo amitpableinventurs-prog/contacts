@@ -16,3 +16,17 @@ function makeUser(array $attrs = []): \App\Models\User
 {
     return \App\Models\User::factory()->create($attrs + ['role' => \App\Support\Roles::ADMIN])->fresh();
 }
+
+/**
+ * Create a clerk on an existing team. The UserObserver always parks new
+ * users on a fresh personal team, so join + switch afterwards — the same
+ * thing UsersController::store does for accounts created via "Add user".
+ */
+function makeClerkOnTeam(int $teamId): \App\Models\User
+{
+    $clerk = \App\Models\User::factory()->create(['role' => \App\Support\Roles::CLERK]);
+    $clerk->teams()->syncWithoutDetaching([$teamId => ['role' => 'member']]);
+    $clerk->forceFill(['current_team_id' => $teamId])->save();
+
+    return $clerk->fresh();
+}

@@ -137,6 +137,10 @@
                         @if ($phone)
                             <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Phone</dt><dd>{{ $phone }}</dd></div>
                         @endif
+                        @if ($contact->admin_comment)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Comment</dt>
+                            <dd class="mt-1 rounded-md border border-yellow-300 bg-yellow-50 px-2 py-1.5 text-yellow-800 whitespace-pre-line">{{ $contact->admin_comment }}</dd></div>
+                        @endif
                         @if ($contact->website)
                             <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Website</dt>
                             <dd><a href="{{ $contact->website }}" target="_blank" rel="noopener" class="hover:underline truncate block">{{ $contact->website }}</a></dd></div>

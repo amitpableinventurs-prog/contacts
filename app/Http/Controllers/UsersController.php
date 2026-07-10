@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\ContactNote;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\Roles;
@@ -75,8 +76,9 @@ class UsersController extends Controller
         $logCount   = ActivityLog::where('user_id', $user->id)->count();
         $loginCount = ActivityLog::where('user_id', $user->id)
             ->where('action', 'like', '%login%')->count();
+        $noteCount  = ContactNote::where('user_id', $user->id)->count();
 
-        return view('users.show', compact('user', 'recentLogs', 'logCount', 'loginCount') + [
+        return view('users.show', compact('user', 'recentLogs', 'logCount', 'loginCount', 'noteCount') + [
             'canEdit' => $this->canActOn($user),
         ]);
     }

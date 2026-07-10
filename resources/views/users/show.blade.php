@@ -46,7 +46,7 @@
         </div>
 
         {{-- Stats --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <x-ui.card>
                 <x-ui.card-content class="p-4">
                     <div class="text-xs text-muted-foreground">Searches used</div>
@@ -68,6 +68,12 @@
                 <x-ui.card-content class="p-4">
                     <div class="text-xs text-muted-foreground">Logins recorded</div>
                     <div class="text-2xl font-semibold mt-1">{{ number_format($loginCount) }}</div>
+                </x-ui.card-content>
+            </x-ui.card>
+            <x-ui.card>
+                <x-ui.card-content class="p-4">
+                    <div class="text-xs text-muted-foreground">Notes added</div>
+                    <div class="text-2xl font-semibold mt-1">{{ number_format($noteCount) }}</div>
                 </x-ui.card-content>
             </x-ui.card>
             <x-ui.card>
@@ -101,6 +107,7 @@
                     @forelse ($recentLogs as $log)
                         @php
                             $actionColor = match(true) {
+                                str_contains($log->action, 'note.added') => 'bg-teal-100 text-teal-800',
                                 str_contains($log->action, 'created') => 'bg-green-100 text-green-800',
                                 str_contains($log->action, 'updated') => 'bg-blue-100 text-blue-800',
                                 str_contains($log->action, 'deleted')

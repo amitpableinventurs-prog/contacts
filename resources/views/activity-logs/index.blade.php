@@ -102,6 +102,7 @@
                     @forelse ($logs as $log)
                         @php
                             $actionColor = match(true) {
+                                str_contains($log->action, 'note.added') => 'bg-teal-100 text-teal-800',
                                 str_contains($log->action, 'created') => 'bg-green-100 text-green-800',
                                 str_contains($log->action, 'updated') => 'bg-blue-100 text-blue-800',
                                 str_contains($log->action, 'deleted')
