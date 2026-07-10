@@ -51,16 +51,46 @@
             </x-ui.card-content>
         </x-ui.card>
 
-        {{-- Stats bar --}}
-        <div class="text-sm text-muted-foreground">
-            {{ $logs->total() }} {{ \Illuminate\Support\Str::plural('record', $logs->total()) }} found
-        </div>
+        @php $isSuperAdmin = auth()->user()->isSuperAdmin(); @endphp
+
+        <form method="POST" action="{{ route('activity-logs.delete') }}"
+              onsubmit="return confirm('Delete selected log entries? This cannot be undone.')"
+              x-data="{ checked: 0 }"
+              @change="checked = $el.querySelectorAll('input[data-log-cb]:checked').length"
+              class="space-y-4">
+            @csrf
+
+            {{-- Stats / actions bar --}}
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-sm text-muted-foreground">
+                    {{ $logs->total() }} {{ \Illuminate\Support\Str::plural('record', $logs->total()) }} found
+                </div>
+                <div class="flex items-center gap-2">
+                    @if ($isSuperAdmin)
+                        <x-ui.button type="submit" variant="destructive" size="sm" x-show="checked > 0" x-cloak>
+                            Delete selected (<span x-text="checked"></span>)
+                        </x-ui.button>
+                    @endif
+                    <a href="{{ route('activity-logs.export', request()->query()) }}">
+                        <x-ui.button type="button" variant="outline" size="sm">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Export CSV
+                        </x-ui.button>
+                    </a>
+                </div>
+            </div>
 
         {{-- Table --}}
         <x-ui.card class="overflow-hidden">
             <x-ui.table>
                 <x-ui.table-header>
                     <x-ui.table-row class="hover:bg-transparent">
+                        @if ($isSuperAdmin)
+                            <x-ui.table-head class="w-10">
+                                <input type="checkbox" class="rounded border-input"
+                                       @change="document.querySelectorAll('input[data-log-cb]').forEach(cb => cb.checked = $event.target.checked); checked = $event.target.checked ? document.querySelectorAll('input[data-log-cb]').length : 0" />
+                            </x-ui.table-head>
+                        @endif
                         <x-ui.table-head>User</x-ui.table-head>
                         <x-ui.table-head>Action</x-ui.table-head>
                         <x-ui.table-head>Entity</x-ui.table-head>
@@ -82,15 +112,38 @@
                             };
                             $actionLabel = ucwords(str_replace(['.', '_'], ' ', $log->action));
                         @endphp
+                        @php
+                            $viewer = auth()->user();
+                            $canViewUser = $log->user && (
+                                $viewer->isSuperAdmin()
+                                || ($viewer->isAdmin() && in_array($log->user->role, ['manager', 'clerk'], true))
+                                || ($viewer->isManager() && $log->user->role === 'clerk')
+                            );
+                        @endphp
                         <x-ui.table-row>
+                            @if ($isSuperAdmin)
+                                <x-ui.table-cell>
+                                    <input type="checkbox" data-log-cb name="log_ids[]" value="{{ $log->id }}" class="rounded border-input" />
+                                </x-ui.table-cell>
+                            @endif
                             <x-ui.table-cell>
-                                <div class="flex items-center gap-2">
-                                    <x-ui.avatar :name="$log->user?->name ?? 'System'" size="xs" />
-                                    <div>
-                                        <div class="text-sm font-medium">{{ $log->user?->name ?? 'System' }}</div>
-                                        <div class="text-xs text-muted-foreground">{{ $log->user?->email }}</div>
+                                @if ($canViewUser)
+                                    <a href="{{ route('users.show', $log->user) }}" class="flex items-center gap-2 group">
+                                        <x-ui.avatar :name="$log->user->name" size="xs" />
+                                        <div>
+                                            <div class="text-sm font-medium group-hover:underline">{{ $log->user->name }}</div>
+                                            <div class="text-xs text-muted-foreground">{{ $log->user->email }}</div>
+                                        </div>
+                                    </a>
+                                @else
+                                    <div class="flex items-center gap-2">
+                                        <x-ui.avatar :name="$log->user?->name ?? 'System'" size="xs" />
+                                        <div>
+                                            <div class="text-sm font-medium">{{ $log->user?->name ?? 'System' }}</div>
+                                            <div class="text-xs text-muted-foreground">{{ $log->user?->email }}</div>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             </x-ui.table-cell>
                             <x-ui.table-cell>
                                 <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium {{ $actionColor }}">
@@ -127,7 +180,7 @@
                         </x-ui.table-row>
                     @empty
                         <x-ui.table-row>
-                            <x-ui.table-cell colspan="5" class="text-center py-12 text-muted-foreground">
+                            <x-ui.table-cell colspan="{{ $isSuperAdmin ? 6 : 5 }}" class="text-center py-12 text-muted-foreground">
                                 No activity recorded yet.
                             </x-ui.table-cell>
                         </x-ui.table-row>
@@ -138,5 +191,6 @@
                 <div class="border-t p-3">{{ $logs->links() }}</div>
             @endif
         </x-ui.card>
+        </form>
     </div>
 </x-app-layout>

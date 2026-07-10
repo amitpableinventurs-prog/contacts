@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use App\Support\ActivityLogger;
 use App\Support\Roles;
@@ -62,6 +63,22 @@ class UsersController extends Controller
         Gate::authorize('manage-users');
 
         return view('users.create', ['roles' => $this->allowedRoles()]);
+    }
+
+    /** Profile page: details, search-quota usage, and recent activity. */
+    public function show(User $user): View
+    {
+        Gate::authorize('manage-users');
+        abort_unless($user->id === Auth::id() || $this->canActOn($user), 403);
+
+        $recentLogs = ActivityLog::where('user_id', $user->id)->latest()->limit(20)->get();
+        $logCount   = ActivityLog::where('user_id', $user->id)->count();
+        $loginCount = ActivityLog::where('user_id', $user->id)
+            ->where('action', 'like', '%login%')->count();
+
+        return view('users.show', compact('user', 'recentLogs', 'logCount', 'loginCount') + [
+            'canEdit' => $this->canActOn($user),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse

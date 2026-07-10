@@ -31,15 +31,15 @@
                     @forelse ($users as $user)
                         <x-ui.table-row>
                             <x-ui.table-cell>
-                                <div class="flex items-center gap-3">
+                                <a href="{{ route('users.show', $user) }}" class="flex items-center gap-3 group">
                                     <x-ui.avatar :name="$user->name" size="sm" />
                                     <div>
-                                        <div class="font-medium">{{ $user->name }}</div>
+                                        <div class="font-medium group-hover:underline">{{ $user->name }}</div>
                                         @if ($user->id === auth()->id())
                                             <div class="text-xs text-muted-foreground">You</div>
                                         @endif
                                     </div>
-                                </div>
+                                </a>
                             </x-ui.table-cell>
                             <x-ui.table-cell class="text-sm text-muted-foreground">{{ $user->email }}</x-ui.table-cell>
                             <x-ui.table-cell>
@@ -76,6 +76,7 @@
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg>
                                         </button>
                                     </x-slot:trigger>
+                                    <x-ui.dropdown-menu-item :href="route('users.show', $user)">View</x-ui.dropdown-menu-item>
                                     <x-ui.dropdown-menu-item :href="route('users.edit', $user)">Edit</x-ui.dropdown-menu-item>
                                     @if ($user->id !== auth()->id())
                                         <x-ui.dropdown-menu-separator />

@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users', [UsersController::class, 'index'])->name('users.index');
     Route::get('/users/create', [UsersController::class, 'create'])->name('users.create');
     Route::post('/users', [UsersController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}', [UsersController::class, 'show'])->whereNumber('user')->name('users.show');
     Route::get('/users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
     Route::patch('/users/{user}', [UsersController::class, 'update'])->name('users.update');
     Route::patch('/users/{user}/password', [UsersController::class, 'changePassword'])->name('users.password');
@@ -174,6 +175,8 @@ Route::middleware(['auth'])->group(function () {
     // -------------------------------------------------------------------------
     Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
     Route::get('/activity-logs', [ActivityLogsController::class, 'index'])->name('activity-logs.index');
+    Route::get('/activity-logs/export', [ActivityLogsController::class, 'export'])->name('activity-logs.export');
+    Route::post('/activity-logs/delete', [ActivityLogsController::class, 'destroySelected'])->name('activity-logs.delete');
 
     // -------------------------------------------------------------------------
     // IP Login logs
