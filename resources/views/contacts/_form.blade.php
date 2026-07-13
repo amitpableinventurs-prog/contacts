@@ -21,10 +21,10 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                     <div class="relative">
                         <x-ui.avatar :name="$contact?->name ?? 'New'" :src="$contact?->photo ? asset('storage/'.$contact->photo) : null" size="lg" />
                     </div>
-                    <div class="space-y-1">
+                    <div class="space-y-1 flex-1 min-w-0">
                         <x-ui.label for="photo">Profile photo (DP)</x-ui.label>
                         <input id="photo" name="photo" type="file" accept="image/*"
-                               class="block text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent" />
+                               class="block w-full max-w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent" />
                         <p class="text-xs text-muted-foreground">JPG, PNG up to 2 MB</p>
                     </div>
                 </div>
@@ -62,8 +62,8 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                     {{-- Comment: every role sees it, only Super Admin can edit --}}
                     @if (auth()->user()->isSuperAdmin())
                         <div class="space-y-1.5 sm:col-span-2">
-                            <x-ui.label for="admin_comment">Comment <span class="text-xs font-normal text-muted-foreground">(visible to all roles — only Super Admin can edit)</span></x-ui.label>
-                            <x-ui.textarea id="admin_comment" name="admin_comment" rows="2">{{ old('admin_comment', $contact?->admin_comment) }}</x-ui.textarea>
+                            <x-ui.label for="admin_comment">Comment <span class="text-xs font-normal text-muted-foreground">(visible to all roles — only Super Admin can edit, max 100 characters)</span></x-ui.label>
+                            <x-ui.textarea id="admin_comment" name="admin_comment" rows="2" maxlength="100">{{ old('admin_comment', $contact?->admin_comment) }}</x-ui.textarea>
                             @error('admin_comment') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                         </div>
                     @elseif ($contact?->admin_comment)

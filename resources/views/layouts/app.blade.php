@@ -64,9 +64,9 @@ $primaryHsl = \App\Support\ColorHelper::hexToHslVar($brand->primary_color);
                 <span class="sr-only">Open sidebar</span>
             </button>
 
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
                 @isset($header)
-                    <div class="text-sm text-muted-foreground">{{ $header }}</div>
+                    <div class="text-sm text-muted-foreground truncate">{{ $header }}</div>
                 @endisset
             </div>
 

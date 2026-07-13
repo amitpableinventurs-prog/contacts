@@ -20,10 +20,10 @@
                 <x-ui.table-header>
                     <x-ui.table-row class="hover:bg-transparent">
                         <x-ui.table-head>Name</x-ui.table-head>
-                        <x-ui.table-head>Email</x-ui.table-head>
+                        <x-ui.table-head class="hidden sm:table-cell">Email</x-ui.table-head>
                         <x-ui.table-head>Role</x-ui.table-head>
-                        <x-ui.table-head>Status</x-ui.table-head>
-                        <x-ui.table-head>Joined</x-ui.table-head>
+                        <x-ui.table-head class="hidden md:table-cell">Status</x-ui.table-head>
+                        <x-ui.table-head class="hidden lg:table-cell">Joined</x-ui.table-head>
                         <x-ui.table-head class="w-10"></x-ui.table-head>
                     </x-ui.table-row>
                 </x-ui.table-header>
@@ -41,7 +41,7 @@
                                     </div>
                                 </a>
                             </x-ui.table-cell>
-                            <x-ui.table-cell class="text-sm text-muted-foreground">{{ $user->email }}</x-ui.table-cell>
+                            <x-ui.table-cell class="hidden sm:table-cell text-sm text-muted-foreground">{{ $user->email }}</x-ui.table-cell>
                             <x-ui.table-cell>
                                 @php
                                     $roleColors = [
@@ -55,7 +55,7 @@
                                     {{ ucwords(str_replace('_', ' ', $user->role ?? 'clerk')) }}
                                 </span>
                             </x-ui.table-cell>
-                            <x-ui.table-cell>
+                            <x-ui.table-cell class="hidden md:table-cell">
                                 @if ($user->is_active ?? true)
                                     <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700">
                                         <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span> Active
@@ -66,7 +66,7 @@
                                     </span>
                                 @endif
                             </x-ui.table-cell>
-                            <x-ui.table-cell class="text-sm text-muted-foreground">
+                            <x-ui.table-cell class="hidden lg:table-cell text-sm text-muted-foreground">
                                 {{ $user->created_at->format('M j, Y') }}
                             </x-ui.table-cell>
                             <x-ui.table-cell>

@@ -58,7 +58,7 @@
                             $isPast = $day->lt($today);
                         @endphp
                         <div @class([
-                            'min-h-[110px] border-b border-r p-2 flex flex-col gap-1 cursor-pointer transition-colors',
+                            'min-h-[70px] sm:min-h-[110px] border-b border-r p-1 sm:p-2 flex flex-col gap-1 cursor-pointer transition-colors',
                             'bg-card hover:bg-accent/30' => $inMonth,
                             'bg-muted/20 text-muted-foreground/60' => !$inMonth,
                         ])
@@ -87,7 +87,7 @@
                                         'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 line-through opacity-70' => $isComplete,
                                         'bg-primary/15 text-primary' => !$isOverdue && !$isComplete,
                                     ])>
-                                        <span class="shrink-0 tabular-nums opacity-70">{{ $r->remind_at->format('H:i') }}</span>
+                                        <span class="hidden sm:inline shrink-0 tabular-nums opacity-70">{{ $r->remind_at->format('H:i') }}</span>
                                         <span class="truncate">{{ $r->title }}</span>
                                     </div>
                                 @endforeach

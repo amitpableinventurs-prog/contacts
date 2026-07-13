@@ -27,10 +27,10 @@
                         <x-ui.table-header>
                             <x-ui.table-row>
                                 <x-ui.table-head>When</x-ui.table-head>
-                                <x-ui.table-head>Channel</x-ui.table-head>
+                                <x-ui.table-head class="hidden md:table-cell">Channel</x-ui.table-head>
                                 <x-ui.table-head>Subject / preview</x-ui.table-head>
-                                <x-ui.table-head class="text-right">Sent</x-ui.table-head>
-                                <x-ui.table-head class="text-right">Failed</x-ui.table-head>
+                                <x-ui.table-head class="hidden md:table-cell text-right">Sent</x-ui.table-head>
+                                <x-ui.table-head class="hidden md:table-cell text-right">Failed</x-ui.table-head>
                                 <x-ui.table-head>Status</x-ui.table-head>
                             </x-ui.table-row>
                         </x-ui.table-header>
@@ -41,7 +41,7 @@
                                         <div class="font-medium">{{ $s->created_at->format('M j, Y') }}</div>
                                         <div class="text-xs text-muted-foreground">{{ $s->created_at->format('g:i a') }} · by {{ $s->user?->name ?: '—' }}</div>
                                     </x-ui.table-cell>
-                                    <x-ui.table-cell>
+                                    <x-ui.table-cell class="hidden md:table-cell">
                                         <x-ui.badge variant="secondary">{{ strtoupper($s->channel) }}</x-ui.badge>
                                     </x-ui.table-cell>
                                     <x-ui.table-cell class="max-w-sm">
@@ -50,10 +50,10 @@
                                         @endif
                                         <div class="text-xs text-muted-foreground truncate">{{ \Illuminate\Support\Str::limit($s->body, 80) }}</div>
                                     </x-ui.table-cell>
-                                    <x-ui.table-cell class="text-right text-sm tabular-nums">
+                                    <x-ui.table-cell class="hidden md:table-cell text-right text-sm tabular-nums">
                                         {{ $s->sent_count }} / {{ $s->total_count }}
                                     </x-ui.table-cell>
-                                    <x-ui.table-cell class="text-right text-sm tabular-nums">
+                                    <x-ui.table-cell class="hidden md:table-cell text-right text-sm tabular-nums">
                                         @if ($s->failed_count > 0)
                                             <span class="text-destructive">{{ $s->failed_count }}</span>
                                         @else

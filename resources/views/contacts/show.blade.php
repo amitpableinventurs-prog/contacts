@@ -199,7 +199,9 @@
                 <x-ui.tabs default="activity">
                     <x-ui.tabs-list>
                         <x-ui.tabs-trigger value="activity">Activity</x-ui.tabs-trigger>
-                        <x-ui.tabs-trigger value="notes">Notes ({{ $contact->contactNotes->count() }})</x-ui.tabs-trigger>
+                        @can('addNote', $contact)
+                            <x-ui.tabs-trigger value="notes">Notes ({{ $contact->contactNotes->count() }})</x-ui.tabs-trigger>
+                        @endcan
                         <x-ui.tabs-trigger value="history">History ({{ $contact->editHistories->count() }})</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="description">Description</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="files">Files ({{ $contact->files->count() }})</x-ui.tabs-trigger>
@@ -288,7 +290,8 @@
                         </x-ui.card>
                     </x-ui.tabs-content>
 
-                    {{-- Notes --}}
+                    {{-- Notes (hidden from clerks — they only see the admin comment) --}}
+                    @can('addNote', $contact)
                     <x-ui.tabs-content value="notes">
                         <div class="space-y-3">
                             {{-- Add note form --}}
@@ -342,6 +345,7 @@
                             @endforelse
                         </div>
                     </x-ui.tabs-content>
+                    @endcan
 
                     {{-- Description --}}
                     <x-ui.tabs-content value="description">

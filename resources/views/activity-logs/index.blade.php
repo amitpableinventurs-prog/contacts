@@ -93,8 +93,8 @@
                         @endif
                         <x-ui.table-head>User</x-ui.table-head>
                         <x-ui.table-head>Action</x-ui.table-head>
-                        <x-ui.table-head>Entity</x-ui.table-head>
-                        <x-ui.table-head>Details</x-ui.table-head>
+                        <x-ui.table-head class="hidden md:table-cell">Entity</x-ui.table-head>
+                        <x-ui.table-head class="hidden md:table-cell">Details</x-ui.table-head>
                         <x-ui.table-head>When</x-ui.table-head>
                     </x-ui.table-row>
                 </x-ui.table-header>
@@ -151,7 +151,7 @@
                                     {{ $actionLabel }}
                                 </span>
                             </x-ui.table-cell>
-                            <x-ui.table-cell class="text-sm">
+                            <x-ui.table-cell class="hidden md:table-cell text-sm">
                                 @if ($log->entity_type)
                                     <span class="text-muted-foreground">{{ $log->entity_type }}</span>
                                     @if ($log->entity_id)
@@ -161,7 +161,7 @@
                                     <span class="text-muted-foreground">—</span>
                                 @endif
                             </x-ui.table-cell>
-                            <x-ui.table-cell>
+                            <x-ui.table-cell class="hidden md:table-cell">
                                 @if ($log->metadata)
                                     <div class="flex flex-wrap gap-1">
                                         @foreach (array_slice($log->metadata, 0, 3) as $key => $value)

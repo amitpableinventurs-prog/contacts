@@ -52,10 +52,11 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
     }
 
-    // All roles can add notes and rate contacts.
+    // Manager and above can add notes. Clerks only see the admin comment.
     public function addNote(User $user, Contact $contact): bool
     {
-        return $contact->team_id === $user->current_team_id;
+        return $contact->team_id === $user->current_team_id
+            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
     public function rate(User $user, Contact $contact): bool

@@ -193,24 +193,32 @@ it('saves the phone country with the contact', function () {
     expect($contact->fresh()->phone_country)->toBe('us');
 });
 
-it('lets a clerk add a note to a contact and records it in the activity log', function () {
+it('hides notes from clerks and blocks them from adding notes', function () {
     $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
     $clerk = makeClerkOnTeam($this->user->current_team_id);
 
     $this->actingAs($clerk);
 
-    // Clerk sees the add-note form on the contact page.
-    $this->get(route('contacts.show', $contact))->assertOk()->assertSee('Add note');
+    // Clerk does not see the Notes tab or the add-note form.
+    $this->get(route('contacts.show', $contact))->assertOk()->assertDontSee('Add note');
+
+    $this->post(route('contacts.notes.store', $contact), [
+        'note_html' => 'Spoke on the phone, call back tomorrow.',
+    ])->assertForbidden();
+
+    expect(\App\Models\ContactNote::where('contact_id', $contact->id)->count())->toBe(0);
+});
+
+it('lets manager-and-above roles add a note and records it in the activity log', function () {
+    $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
 
     $this->post(route('contacts.notes.store', $contact), [
         'note_html' => 'Spoke on the phone, call back tomorrow.',
     ])->assertRedirect();
 
     $note = \App\Models\ContactNote::where('contact_id', $contact->id)->firstOrFail();
-    expect($note->user_id)->toBe($clerk->id);
-
-    // The note shows up in the clerk's performance/activity logs.
-    expect(\App\Models\ActivityLog::where('user_id', $clerk->id)->where('action', 'note.added')->count())->toBe(1);
+    expect($note->user_id)->toBe($this->user->id)
+        ->and(\App\Models\ActivityLog::where('user_id', $this->user->id)->where('action', 'note.added')->count())->toBe(1);
 });
 
 it('blocks clerks from deleting notes', function () {

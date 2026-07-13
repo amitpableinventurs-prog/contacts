@@ -3,6 +3,7 @@
         <x-slot:trigger>
             <button class="flex items-center gap-2 rounded-full focus-ring">
                 <x-ui.avatar :name="auth()->user()->name" :src="auth()->user()->photo" size="sm" />
+                <span class="max-w-[110px] truncate text-sm font-medium sm:max-w-[160px]">{{ auth()->user()->name }}</span>
             </button>
         </x-slot:trigger>
 

@@ -690,7 +690,7 @@ class ContactsController extends Controller
             'twitter'              => ['nullable', 'string', 'max:255'],
             'linkedin'             => ['nullable', 'string', 'max:255'],
             'notes'                => ['nullable', 'string'],
-            'admin_comment'        => ['nullable', 'string', 'max:2000'],
+            'admin_comment'        => ['nullable', 'string', 'max:100'],
             'description_html'     => ['nullable', 'string'],
             'custom_fields_keys'   => ['nullable', 'array'],
             'custom_fields_keys.*' => ['nullable', 'string', 'max:100'],

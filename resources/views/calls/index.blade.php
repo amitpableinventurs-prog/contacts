@@ -74,7 +74,7 @@
                         <x-ui.table-header>
                             <x-ui.table-row class="hover:bg-transparent">
                                 <x-ui.table-head>Contact</x-ui.table-head>
-                                <x-ui.table-head>Number</x-ui.table-head>
+                                <x-ui.table-head class="hidden sm:table-cell">Number</x-ui.table-head>
                                 <x-ui.table-head>Status</x-ui.table-head>
                                 <x-ui.table-head>When</x-ui.table-head>
                             </x-ui.table-row>
@@ -92,7 +92,7 @@
                                             <span class="text-muted-foreground">Unknown</span>
                                         @endif
                                     </x-ui.table-cell>
-                                    <x-ui.table-cell class="font-mono text-sm">{{ $call->to_number }}</x-ui.table-cell>
+                                    <x-ui.table-cell class="hidden sm:table-cell font-mono text-sm">{{ $call->to_number }}</x-ui.table-cell>
                                     <x-ui.table-cell>
                                         <x-ui.badge variant="{{ $call->status === 'completed' ? 'success' : ($call->status === 'failed' ? 'destructive' : 'secondary') }}">
                                             {{ $call->status }}

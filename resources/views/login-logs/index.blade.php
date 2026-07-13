@@ -52,13 +52,13 @@
                 <x-ui.table-header>
                     <x-ui.table-row class="hover:bg-transparent">
                         <x-ui.table-head>User</x-ui.table-head>
-                        <x-ui.table-head>IP Address</x-ui.table-head>
-                        <x-ui.table-head>Browser</x-ui.table-head>
-                        <x-ui.table-head>Device</x-ui.table-head>
-                        <x-ui.table-head>Platform</x-ui.table-head>
+                        <x-ui.table-head class="hidden md:table-cell">IP Address</x-ui.table-head>
+                        <x-ui.table-head class="hidden lg:table-cell">Browser</x-ui.table-head>
+                        <x-ui.table-head class="hidden lg:table-cell">Device</x-ui.table-head>
+                        <x-ui.table-head class="hidden xl:table-cell">Platform</x-ui.table-head>
                         <x-ui.table-head>Login time</x-ui.table-head>
-                        <x-ui.table-head>Logout time</x-ui.table-head>
-                        <x-ui.table-head>Duration</x-ui.table-head>
+                        <x-ui.table-head class="hidden md:table-cell">Logout time</x-ui.table-head>
+                        <x-ui.table-head class="hidden sm:table-cell">Duration</x-ui.table-head>
                     </x-ui.table-row>
                 </x-ui.table-header>
                 <x-ui.table-body>
@@ -68,10 +68,10 @@
                                 <div class="font-medium text-sm">{{ $log->user?->name ?? '—' }}</div>
                                 <div class="text-xs text-muted-foreground">{{ $log->user?->email }}</div>
                             </x-ui.table-cell>
-                            <x-ui.table-cell>
+                            <x-ui.table-cell class="hidden md:table-cell">
                                 <span class="font-mono text-sm">{{ $log->ip_address }}</span>
                             </x-ui.table-cell>
-                            <x-ui.table-cell>
+                            <x-ui.table-cell class="hidden lg:table-cell">
                                 @php
                                     $browserIcon = match($log->browser) {
                                         'Chrome'  => '🌐',
@@ -84,7 +84,7 @@
                                 @endphp
                                 <span class="text-sm">{{ $browserIcon }} {{ $log->browser ?? '—' }}</span>
                             </x-ui.table-cell>
-                            <x-ui.table-cell>
+                            <x-ui.table-cell class="hidden lg:table-cell">
                                 @php
                                     $deviceIcon = match($log->device) {
                                         'Mobile'  => '📱',
@@ -94,12 +94,12 @@
                                 @endphp
                                 <span class="text-sm">{{ $deviceIcon }} {{ $log->device ?? '—' }}</span>
                             </x-ui.table-cell>
-                            <x-ui.table-cell class="text-sm">{{ $log->platform ?? '—' }}</x-ui.table-cell>
+                            <x-ui.table-cell class="hidden xl:table-cell text-sm">{{ $log->platform ?? '—' }}</x-ui.table-cell>
                             <x-ui.table-cell>
                                 <div class="text-sm">{{ $log->created_at->format('M j, Y') }}</div>
                                 <div class="text-xs text-muted-foreground font-mono">{{ $log->created_at->format('H:i:s') }}</div>
                             </x-ui.table-cell>
-                            <x-ui.table-cell>
+                            <x-ui.table-cell class="hidden md:table-cell">
                                 @if ($log->logout_at)
                                     <div class="text-sm">{{ $log->logout_at->format('M j, Y') }}</div>
                                     <div class="text-xs text-muted-foreground font-mono">{{ $log->logout_at->format('H:i:s') }}</div>
@@ -110,7 +110,7 @@
                                     </span>
                                 @endif
                             </x-ui.table-cell>
-                            <x-ui.table-cell class="text-sm text-muted-foreground">
+                            <x-ui.table-cell class="hidden sm:table-cell text-sm text-muted-foreground">
                                 {{ $log->duration ?? '—' }}
                             </x-ui.table-cell>
                         </x-ui.table-row>
