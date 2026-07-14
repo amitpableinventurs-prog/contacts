@@ -35,6 +35,24 @@ class ContactsController extends Controller
         abort_unless($contact->team_id === Auth::user()->current_team_id, 403);
     }
 
+    /**
+     * Track a clerk's phone-number search in the session so the dashboard
+     * can offer the last 5 searches as a quick way back into a contact.
+     */
+    private function rememberClerkSearch(string $number, ?Contact $match): void
+    {
+        $recent = session('clerk_recent_searches', []);
+        $recent = array_values(array_filter($recent, fn ($entry) => $entry['number'] !== $number));
+
+        array_unshift($recent, [
+            'number'     => $number,
+            'contact_id' => $match?->id,
+            'name'       => $match?->name,
+        ]);
+
+        session(['clerk_recent_searches' => array_slice($recent, 0, 5)]);
+    }
+
     // ------------------------------------------------------------------
     // List
     // ------------------------------------------------------------------
@@ -107,6 +125,10 @@ class ContactsController extends Controller
         $tags         = $isClerk ? collect() : Tag::where('team_id', $teamId)->orderBy('name')->get();
         $pendingCount = $isClerk ? 0 : Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count();
         $clerkSearched = ! $isClerk || $number !== '';
+
+        if ($isClerk && $number !== '') {
+            $this->rememberClerkSearch($number, $contacts->first());
+        }
 
         return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user', 'clerkSearched'));
     }

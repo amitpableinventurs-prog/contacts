@@ -33,6 +33,28 @@
                     <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">View all contacts →</a>
                 </div>
             @endunless
+
+            @if ($isClerk && !empty($recentSearches))
+                <div class="space-y-2">
+                    <h2 class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recent searches</h2>
+                    <div class="divide-y rounded-md border">
+                        @foreach ($recentSearches as $search)
+                            <a href="{{ $search['contact_id'] ? route('contacts.show', $search['contact_id']) : route('contacts.index', ['number' => $search['number']]) }}"
+                               class="flex items-center justify-between gap-2 px-3 py-2.5 text-sm hover:bg-accent transition-colors">
+                                <span class="min-w-0 truncate">
+                                    @if ($search['name'])
+                                        <span class="font-medium">{{ $search['name'] }}</span>
+                                        <span class="text-muted-foreground"> · {{ $search['number'] }}</span>
+                                    @else
+                                        <span class="text-muted-foreground">No match for {{ $search['number'] }}</span>
+                                    @endif
+                                </span>
+                                <svg class="h-4 w-4 shrink-0 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </x-app-layout>
