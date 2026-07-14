@@ -106,40 +106,48 @@ $brand = app(\App\Settings\GeneralSettings::class);
 </div>
 
 @if ($currentTeam)
-    @php
-        $allTeams = $user->ownedTeams->merge($user->teams)->unique('id');
-    @endphp
-    <x-ui.dropdown-menu align="start" width="w-56">
-        <x-slot:trigger>
-            <button class="w-full px-4 py-3 border-b text-left hover:bg-accent/40 transition-colors">
-                <div class="flex items-center gap-2">
-                    <div class="flex-1 min-w-0">
-                        <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
-                        <div class="mt-0.5 text-sm font-medium truncate">{{ $currentTeam->name }}</div>
+    @if ($isClerk)
+        {{-- Clerks are locked to the workspace they were assigned to — no switcher, just the name. --}}
+        <div class="w-full px-4 py-3 border-b text-left">
+            <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
+            <div class="mt-0.5 text-sm font-medium truncate">{{ $currentTeam->name }}</div>
+        </div>
+    @else
+        @php
+            $allTeams = $user->ownedTeams->merge($user->teams)->unique('id');
+        @endphp
+        <x-ui.dropdown-menu align="start" width="w-56">
+            <x-slot:trigger>
+                <button class="w-full px-4 py-3 border-b text-left hover:bg-accent/40 transition-colors">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
+                            <div class="mt-0.5 text-sm font-medium truncate">{{ $currentTeam->name }}</div>
+                        </div>
+                        <svg class="h-3 w-3 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
                     </div>
-                    <svg class="h-3 w-3 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
-                </div>
-            </button>
-        </x-slot:trigger>
-        @if ($allTeams->count() > 1)
-            <div class="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Switch workspace</div>
-            @foreach ($allTeams as $t)
-                <form method="POST" action="{{ route('workspace.switch', $t) }}">
-                    @csrf
-                    <x-ui.dropdown-menu-item as="button" type="submit">
-                        <span class="flex-1 truncate">{{ $t->name }}</span>
-                        @if ($t->id === $currentTeam->id)
-                            <svg class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                        @endif
-                    </x-ui.dropdown-menu-item>
-                </form>
-            @endforeach
-            <x-ui.dropdown-menu-separator />
-        @endif
-        @if ($isAdminPlus)
-            <x-ui.dropdown-menu-item :href="route('workspace.export')">Export workspace data</x-ui.dropdown-menu-item>
-        @endif
-    </x-ui.dropdown-menu>
+                </button>
+            </x-slot:trigger>
+            @if ($allTeams->count() > 1)
+                <div class="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Switch workspace</div>
+                @foreach ($allTeams as $t)
+                    <form method="POST" action="{{ route('workspace.switch', $t) }}">
+                        @csrf
+                        <x-ui.dropdown-menu-item as="button" type="submit">
+                            <span class="flex-1 truncate">{{ $t->name }}</span>
+                            @if ($t->id === $currentTeam->id)
+                                <svg class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                            @endif
+                        </x-ui.dropdown-menu-item>
+                    </form>
+                @endforeach
+                <x-ui.dropdown-menu-separator />
+            @endif
+            @if ($isAdminPlus)
+                <x-ui.dropdown-menu-item :href="route('workspace.export')">Export workspace data</x-ui.dropdown-menu-item>
+            @endif
+        </x-ui.dropdown-menu>
+    @endif
 @endif
 
 {{-- Role badge --}}

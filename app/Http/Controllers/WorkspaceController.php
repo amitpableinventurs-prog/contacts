@@ -153,6 +153,8 @@ class WorkspaceController extends Controller
     public function switchTeam(Team $team): RedirectResponse
     {
         $user = Auth::user();
+        abort_if($user->isClerk(), 403, 'Clerks cannot switch workspaces.');
+
         if ($user->switchTeam($team)) {
             return back()->with('toast', ['type' => 'success', 'message' => 'Switched to '.$team->name.'.']);
         }
