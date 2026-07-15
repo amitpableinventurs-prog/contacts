@@ -366,11 +366,14 @@
                                                 <span>{{ $note->created_at->diffForHumans() }}</span>
                                             </div>
                                             <div class="flex items-center gap-1">
-                                                @can('editNote', $note)
+                                                @php
+                                                    $canEditNote = auth()->user()->id === $note->user_id || auth()->user()->hasRole(['super_admin', 'admin', 'manager']);
+                                                @endphp
+                                                @if ($canEditNote)
                                                     <button @click="editing_{{ $note->id }} = !editing_{{ $note->id }}" class="text-muted-foreground hover:text-foreground" title="Edit note">
                                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                     </button>
-                                                @endcan
+                                                @endif
                                                 @can('manage', $contact)
                                                     <form method="POST" action="{{ route('contacts.notes.destroy', [$contact, $note]) }}" class="inline">
                                                         @csrf @method('DELETE')
@@ -382,7 +385,7 @@
                                             </div>
                                         </div>
                                         <div x-show="!editing_{{ $note->id }}" class="text-sm whitespace-pre-line">{!! nl2br(e($note->note_html)) !!}</div>
-                                        @can('editNote', $note)
+                                        @if ($canEditNote)
                                             <form method="POST" action="{{ route('contacts.notes.update', [$contact, $note]) }}" x-show="editing_{{ $note->id }}" x-cloak class="space-y-2">
                                                 @csrf @method('PATCH')
                                                 <x-ui.textarea name="note_html" rows="3" required>{{ $note->note_html }}</x-ui.textarea>
@@ -391,7 +394,7 @@
                                                     <button type="button" @click="editing_{{ $note->id }} = false" class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors hover:bg-accent focus-ring">Cancel</button>
                                                 </div>
                                             </form>
-                                        @endcan
+                                        @endif
                                     </x-ui.card-content>
                                 </x-ui.card>
                             @empty
