@@ -367,7 +367,8 @@
                                             </div>
                                             <div class="flex items-center gap-1">
                                                 @php
-                                                    $canEditNote = auth()->user()->id === $note->user_id || auth()->user()->hasRole(['super_admin', 'admin', 'manager']);
+                                                    $user = auth()->user();
+                                                    $canEditNote = $note->user_id === $user->id || $user->isManager() || $user->isAdmin() || $user->isSuperAdmin();
                                                 @endphp
                                                 @if ($canEditNote)
                                                     <button @click="editing_{{ $note->id }} = !editing_{{ $note->id }}" class="text-muted-foreground hover:text-foreground" title="Edit note">
