@@ -6,9 +6,19 @@
     <div class="flex items-start justify-center min-h-[60vh] pt-16">
         <div class="w-full max-w-lg space-y-6">
             <div class="text-center space-y-1">
-                <h1 class="text-2xl font-bold tracking-tight">Search Contact</h1>
+                <h1 class="text-2xl font-bold tracking-tight">
+                    @if ($isClerk)
+                        Find a Contact
+                    @else
+                        Search Contacts
+                    @endif
+                </h1>
                 <p class="text-sm text-muted-foreground">
-                    {{ $isClerk ? 'Enter a phone number to find a contact.' : 'Enter a phone number or name to find a contact.' }}
+                    @if ($isClerk)
+                        Search by phone number to find and manage contact interactions.
+                    @else
+                        Search by phone number or name to find and manage your contacts.
+                    @endif
                 </p>
             </div>
 
@@ -21,7 +31,7 @@
                         type="text"
                         name="{{ $isClerk ? 'number' : 'q' }}"
                         autofocus
-                        placeholder="{{ $isClerk ? 'Phone number…' : 'Phone number or name…' }}"
+                        placeholder="{{ $isClerk ? '91 98765 43210 or +1 555-123-4567' : 'Search by name, phone, email, company…' }}"
                         class="flex h-11 w-full rounded-md border border-input bg-background pl-9 pr-4 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                 </div>
