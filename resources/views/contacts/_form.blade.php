@@ -1,7 +1,8 @@
-@props(['contact' => null, 'groups' => collect(), 'tags' => collect(), 'canEdit' => true])
+@props(['contact' => null, 'groups' => collect(), 'tags' => collect(), 'canEdit' => true, 'canEditNotes' => null])
 
 @php
 $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
+$canEditNotes = $canEditNotes ?? $canEdit;
 @endphp
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -112,7 +113,7 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                 <x-ui.card-title>Quick notes</x-ui.card-title>
             </x-ui.card-header>
             <x-ui.card-content>
-                <x-ui.textarea id="notes" name="notes" rows="4" placeholder="Short notes to remember...">{{ old('notes', $contact ? ($contact->getAttributes()['notes'] ?? '') : '') }}</x-ui.textarea>
+                <x-ui.textarea id="notes" name="notes" rows="4" placeholder="Short notes to remember..." :disabled="!$canEditNotes">{{ old('notes', $contact ? ($contact->getAttributes()['notes'] ?? '') : '') }}</x-ui.textarea>
             </x-ui.card-content>
         </x-ui.card>
 
@@ -294,7 +295,7 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
 
 <div class="mt-6 flex items-center justify-end gap-2">
     <a href="{{ url()->previous() }}" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent focus-ring">Cancel</a>
-    <x-ui.button type="submit" :disabled="!$canEdit">{{ $contact ? 'Save changes' : 'Create contact' }}</x-ui.button>
+    <x-ui.button type="submit" :disabled="!$canEditNotes">{{ $contact ? 'Save changes' : 'Create contact' }}</x-ui.button>
 </div>
 
 @push('head')

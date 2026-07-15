@@ -73,6 +73,13 @@ class ContactPolicy
         return $contact->team_id === $user->current_team_id;
     }
 
+    // Clerks (and everyone else) can edit the "Quick notes" field from the contact
+    // edit form, even though update() blocks them from every other field.
+    public function updateNotes(User $user, Contact $contact): bool
+    {
+        return $contact->team_id === $user->current_team_id;
+    }
+
     public function rate(User $user, Contact $contact): bool
     {
         return $contact->team_id === $user->current_team_id;

@@ -48,6 +48,7 @@
 
         @php
             $canEdit = Auth::user()->can('update', $contact);
+            $canEditNotes = $canEdit || Auth::user()->can('updateNotes', $contact);
             $userRole = Auth::user()->role;
         @endphp
 
@@ -55,17 +56,17 @@
             <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <strong>View-only mode:</strong>
                 @if ($userRole === 'clerk')
-                    As a Clerk, you can add and edit your own notes and rate contacts, but cannot edit contact fields. Only Managers and above can modify contact details.
+                    As a Clerk, you can edit and save the Quick notes field, but cannot edit other contact fields. Only Managers and above can modify contact details.
                 @else
                     This contact is in read-only mode. Only authorized users can edit these fields.
                 @endif
             </div>
         @endif
 
-        <form action="{{ route('contacts.update', $contact) }}" method="POST" enctype="multipart/form-data" @if (!$canEdit) onsubmit="return false;" @endif>
+        <form action="{{ route('contacts.update', $contact) }}" method="POST" enctype="multipart/form-data" @if (!$canEditNotes) onsubmit="return false;" @endif>
             @csrf
             @method('PUT')
-            @include('contacts._form', ['contact' => $contact, 'groups' => $groups, 'tags' => $tags, 'canEdit' => $canEdit])
+            @include('contacts._form', ['contact' => $contact, 'groups' => $groups, 'tags' => $tags, 'canEdit' => $canEdit, 'canEditNotes' => $canEditNotes])
         </form>
     </div>
 </x-app-layout>

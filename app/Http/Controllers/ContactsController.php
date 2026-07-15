@@ -269,7 +269,17 @@ class ContactsController extends Controller
 
     public function update(Request $request, Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        if (! Gate::allows('update', $contact)) {
+            Gate::authorize('updateNotes', $contact);
+
+            $notes = $request->validate(['notes' => ['nullable', 'string']])['notes'] ?? null;
+            $contact->update(['notes' => $notes]);
+
+            ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name, 'field' => 'notes']);
+
+            return redirect()->route('contacts.show', $contact)
+                ->with('toast', ['type' => 'success', 'message' => 'Notes updated.']);
+        }
 
         $data = $this->validateContact($request);
 
