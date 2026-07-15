@@ -82,9 +82,9 @@ class AppServiceProvider extends ServiceProvider
             $user->current_team_id !== null
         );
 
-        // Only Super Admin, Admin, Manager can edit contacts.
+        // Every workspace role can edit contact details.
         Gate::define('contacts.update', fn (User $user) =>
-            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER)
+            $user->current_team_id !== null
         );
 
         // ── Modules for Manager and above ─────────────────────────────────

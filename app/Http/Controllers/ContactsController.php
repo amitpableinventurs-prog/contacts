@@ -345,21 +345,21 @@ class ContactsController extends Controller
 
     public function suspend(Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
         $contact->update(['status' => 'suspended', 'suspended_at' => now()]);
         return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} suspended."]);
     }
 
     public function ban(Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
         $contact->update(['status' => 'banned', 'banned_at' => now()]);
         return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} banned."]);
     }
 
     public function reactivate(Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
         $contact->update(['status' => 'active']);
         return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} reactivated."]);
     }
@@ -451,7 +451,7 @@ class ContactsController extends Controller
 
     public function destroyNote(Contact $contact, ContactNote $note): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
         abort_unless($note->contact_id === $contact->id, 403);
 
         $note->delete();
@@ -467,7 +467,7 @@ class ContactsController extends Controller
 
     public function storeFile(Request $request, Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
 
         $request->validate([
             'file' => ['required', 'file', 'max:10240'], // 10 MB
@@ -491,7 +491,7 @@ class ContactsController extends Controller
 
     public function destroyFile(Contact $contact, ContactFile $file): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
         abort_unless($file->contact_id === $contact->id, 403);
 
         Storage::disk('public')->delete($file->file_path);
@@ -506,7 +506,7 @@ class ContactsController extends Controller
 
     public function storeGallery(Request $request, Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
 
         $request->validate([
             'images'   => ['required', 'array'],
@@ -530,7 +530,7 @@ class ContactsController extends Controller
 
     public function destroyGallery(Contact $contact, ContactGalleryImage $image): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
         abort_unless($image->contact_id === $contact->id, 403);
 
         Storage::disk('public')->delete($image->image_path);
@@ -545,7 +545,7 @@ class ContactsController extends Controller
 
     public function merge(Contact $contact): View
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
 
         $phone = $contact->phone;
 
@@ -563,7 +563,7 @@ class ContactsController extends Controller
 
     public function mergeStore(Request $request, Contact $contact): RedirectResponse
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('manage', $contact);
 
         $duplicateIds = $request->input('duplicate_ids', []);
         if (empty($duplicateIds)) {
@@ -718,6 +718,9 @@ class ContactsController extends Controller
         // change it — drop it from the payload for every other role.
         if (! Auth::user()->isSuperAdmin()) {
             unset($data['admin_comment']);
+        }
+        if (! Auth::user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN, \App\Support\Roles::MANAGER)) {
+            unset($data['status']);
         }
 
         $keys   = $data['custom_fields_keys'] ?? [];

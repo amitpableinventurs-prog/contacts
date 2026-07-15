@@ -26,8 +26,15 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
-    // Only manager and above can edit contacts.
+    // Every role assigned to the workspace can edit contact details.
     public function update(User $user, Contact $contact): bool
+    {
+        return $contact->team_id === $user->current_team_id;
+    }
+
+    // Manager and above can perform admin-level contact actions such as
+    // status changes, merges, uploads/deletes, and deleting notes.
+    public function manage(User $user, Contact $contact): bool
     {
         return $contact->team_id === $user->current_team_id
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);

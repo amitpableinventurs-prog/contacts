@@ -190,20 +190,45 @@ it('saves the phone country with the contact', function () {
     expect($contact->fresh()->phone_country)->toBe('us');
 });
 
-it('hides notes from clerks and blocks them from adding notes', function () {
+it('lets clerks view and add notes', function () {
     $contact = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
     $clerk = makeClerkOnTeam($this->user->current_team_id);
 
     $this->actingAs($clerk);
 
-    // Clerk does not see the Notes tab or the add-note form.
-    $this->get(route('contacts.show', $contact))->assertOk()->assertDontSee('Add note');
+    $this->get(route('contacts.show', $contact))->assertOk()->assertSee('Add note');
 
     $this->post(route('contacts.notes.store', $contact), [
         'note_html' => 'Spoke on the phone, call back tomorrow.',
-    ])->assertForbidden();
+    ])->assertRedirect();
 
-    expect(\App\Models\ContactNote::where('contact_id', $contact->id)->count())->toBe(0);
+    $note = \App\Models\ContactNote::where('contact_id', $contact->id)->firstOrFail();
+    expect($note->user_id)->toBe($clerk->id)
+        ->and($note->note_html)->toBe('Spoke on the phone, call back tomorrow.');
+});
+
+it('lets clerks edit contact details without changing status', function () {
+    $contact = Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'name' => 'Original Name',
+        'phone' => '9503466923',
+        'status' => 'active',
+    ]);
+    $clerk = makeClerkOnTeam($this->user->current_team_id);
+
+    $this->actingAs($clerk);
+
+    $this->get(route('contacts.edit', $contact))->assertOk()->assertSee('Save changes');
+
+    $this->put(route('contacts.update', $contact), [
+        'name' => 'Updated By Clerk',
+        'phone' => '9503466923',
+        'status' => 'banned',
+    ])->assertRedirect(route('contacts.show', $contact));
+
+    $contact->refresh();
+    expect($contact->name)->toBe('Updated By Clerk')
+        ->and($contact->status)->toBe('active');
 });
 
 it('lets manager-and-above roles add a note and records it in the activity log', function () {

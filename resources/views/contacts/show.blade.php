@@ -3,6 +3,7 @@
 
     <div class="space-y-4">
 
+        @can('manage', $contact)
         @if (($duplicateCount ?? 0) > 0)
             <x-ui.card class="border-warning/40 bg-warning/5">
                 <x-ui.card-content class="p-4 flex items-center gap-3 text-sm">
@@ -15,6 +16,7 @@
                 </x-ui.card-content>
             </x-ui.card>
         @endif
+        @endcan
 
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -76,7 +78,7 @@
                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg>
                         </button>
                     </x-slot:trigger>
-                    @can('update', $contact)
+                    @can('manage', $contact)
                         @if ($contact->status !== 'suspended')
                             <form method="POST" action="{{ route('contacts.suspend', $contact) }}">
                                 @csrf
@@ -352,7 +354,7 @@
                                                 <span>·</span>
                                                 <span>{{ $note->created_at->diffForHumans() }}</span>
                                             </div>
-                                            @can('update', $contact)
+                                            @can('manage', $contact)
                                                 <form method="POST" action="{{ route('contacts.notes.destroy', [$contact, $note]) }}">
                                                     @csrf @method('DELETE')
                                                     <button type="submit" class="text-muted-foreground hover:text-destructive" title="Delete note">
@@ -386,7 +388,7 @@
                     {{-- Files --}}
                     <x-ui.tabs-content value="files">
                         <div class="space-y-3">
-                            @can('update', $contact)
+                            @can('manage', $contact)
                                 <x-ui.card>
                                     <x-ui.card-header><x-ui.card-title>Upload file</x-ui.card-title></x-ui.card-header>
                                     <x-ui.card-content>
@@ -414,7 +416,7 @@
                                         </div>
                                         <a href="{{ asset('storage/'.$file->file_path) }}" download="{{ $file->file_name }}"
                                            class="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded border border-input hover:bg-accent">Download</a>
-                                        @can('update', $contact)
+                                        @can('manage', $contact)
                                             <form method="POST" action="{{ route('contacts.files.destroy', [$contact, $file]) }}" onsubmit="return confirm('Delete file?')">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="text-muted-foreground hover:text-destructive">
@@ -433,7 +435,7 @@
                     {{-- Gallery --}}
                     <x-ui.tabs-content value="gallery">
                         <div class="space-y-3">
-                            @can('update', $contact)
+                            @can('manage', $contact)
                                 <x-ui.card>
                                     <x-ui.card-header><x-ui.card-title>Upload images</x-ui.card-title></x-ui.card-header>
                                     <x-ui.card-content>
@@ -454,7 +456,7 @@
                                     @foreach ($contact->galleryImages->sortByDesc('created_at') as $image)
                                         <div class="relative group rounded-lg overflow-hidden border border-input bg-muted aspect-square">
                                             <img src="{{ asset('storage/'.$image->image_path) }}" alt="{{ $image->image_name }}" class="w-full h-full object-cover" />
-                                            @can('update', $contact)
+                                            @can('manage', $contact)
                                                 <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                     <form method="POST" action="{{ route('contacts.gallery.destroy', [$contact, $image]) }}" onsubmit="return confirm('Delete image?')">
                                                         @csrf @method('DELETE')

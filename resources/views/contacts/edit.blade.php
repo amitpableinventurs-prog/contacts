@@ -15,31 +15,33 @@
                 <a href="{{ route('contacts.show', $contact) }}">
                     <x-ui.button variant="outline" size="sm">View contact</x-ui.button>
                 </a>
-                <x-ui.dropdown-menu align="end">
-                    <x-slot:trigger>
-                        <button class="rounded-md border border-input bg-background h-9 px-3 hover:bg-accent">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg>
-                        </button>
-                    </x-slot:trigger>
-                    @if ($contact->status !== 'suspended')
-                        <form method="POST" action="{{ route('contacts.suspend', $contact) }}">
-                            @csrf
-                            <x-ui.dropdown-menu-item as="button" type="submit" class="text-orange-600">Suspend</x-ui.dropdown-menu-item>
-                        </form>
-                    @endif
-                    @if ($contact->status !== 'banned')
-                        <form method="POST" action="{{ route('contacts.ban', $contact) }}">
-                            @csrf
-                            <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-700">Ban</x-ui.dropdown-menu-item>
-                        </form>
-                    @endif
-                    @if ($contact->status !== 'active')
-                        <form method="POST" action="{{ route('contacts.reactivate', $contact) }}">
-                            @csrf
-                            <x-ui.dropdown-menu-item as="button" type="submit">Reactivate</x-ui.dropdown-menu-item>
-                        </form>
-                    @endif
-                </x-ui.dropdown-menu>
+                @can('manage', $contact)
+                    <x-ui.dropdown-menu align="end">
+                        <x-slot:trigger>
+                            <button class="rounded-md border border-input bg-background h-9 px-3 hover:bg-accent">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01"/></svg>
+                            </button>
+                        </x-slot:trigger>
+                        @if ($contact->status !== 'suspended')
+                            <form method="POST" action="{{ route('contacts.suspend', $contact) }}">
+                                @csrf
+                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-orange-600">Suspend</x-ui.dropdown-menu-item>
+                            </form>
+                        @endif
+                        @if ($contact->status !== 'banned')
+                            <form method="POST" action="{{ route('contacts.ban', $contact) }}">
+                                @csrf
+                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-700">Ban</x-ui.dropdown-menu-item>
+                            </form>
+                        @endif
+                        @if ($contact->status !== 'active')
+                            <form method="POST" action="{{ route('contacts.reactivate', $contact) }}">
+                                @csrf
+                                <x-ui.dropdown-menu-item as="button" type="submit">Reactivate</x-ui.dropdown-menu-item>
+                            </form>
+                        @endif
+                    </x-ui.dropdown-menu>
+                @endcan
             </div>
         </div>
 
