@@ -48,11 +48,17 @@
 
         @php
             $canEdit = Auth::user()->can('update', $contact);
+            $userRole = Auth::user()->role;
         @endphp
 
         @if (!$canEdit)
             <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                <strong>View-only mode:</strong> Clerks can only add notes. To edit contact fields, you need manager or higher privileges.
+                <strong>View-only mode:</strong>
+                @if ($userRole === 'clerk')
+                    As a Clerk, you can add and edit your own notes and rate contacts, but cannot edit contact fields. Only Managers and above can modify contact details.
+                @else
+                    This contact is in read-only mode. Only authorized users can edit these fields.
+                @endif
             </div>
         @endif
 
