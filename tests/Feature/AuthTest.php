@@ -2,6 +2,7 @@
 
 use App\Models\Team;
 use App\Models\User;
+use App\Support\Roles;
 
 it('registers a user and auto-creates a personal team', function () {
     $response = $this->post('/register', [
@@ -46,6 +47,13 @@ it('logs the user out', function () {
     $this->actingAs(makeUser());
     $this->post('/logout')->assertRedirect('/');
     $this->assertGuest();
+});
+
+it('checks roles passed as an array', function () {
+    $user = User::factory()->create(['role' => Roles::MANAGER]);
+
+    expect($user->hasRole([Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER]))->toBeTrue()
+        ->and($user->hasRole([Roles::CLERK]))->toBeFalse();
 });
 
 it('redirects unauthenticated users from the dashboard', function () {

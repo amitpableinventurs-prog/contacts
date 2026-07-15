@@ -62,8 +62,12 @@ class User extends Authenticatable
     }
 
     // Uses the 'role' string column on users table (single role per user).
-    public function hasRole(string ...$names): bool
+    public function hasRole(string|array ...$names): bool
     {
+        $names = array_reduce($names, function (array $carry, string|array $name): array {
+            return array_merge($carry, (array) $name);
+        }, []);
+
         return in_array($this->role, $names, true);
     }
 
