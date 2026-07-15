@@ -227,5 +227,7 @@ Route::middleware(['auth'])->group(function () {
     // Workspace
     // -------------------------------------------------------------------------
     Route::post('/workspace/switch/{team}', [WorkspaceController::class, 'switchTeam'])->name('workspace.switch');
-    Route::get('/workspace/export', [WorkspaceExportController::class, 'download'])->name('workspace.export');
+    Route::get('/workspace/export', [WorkspaceExportController::class, 'show'])->name('workspace.export');
+    Route::post('/workspace/export/verify-pin', [WorkspaceExportController::class, 'verifyPin'])->name('workspace.export-pin');
+    Route::get('/workspace/export/download', [WorkspaceExportController::class, 'download'])->name('workspace.export-download');
 });

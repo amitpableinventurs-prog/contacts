@@ -7,14 +7,6 @@
                 <h1 class="text-2xl font-semibold tracking-tight">Members of {{ $team->name }}</h1>
                 <p class="text-sm text-muted-foreground">Invite people, manage roles, remove members.</p>
             </div>
-            @if (auth()->user()->isSuperAdmin())
-            <a href="{{ route('workspace.export') }}"
-               class="inline-flex h-9 items-center gap-1.5 rounded-md border border-input bg-background px-3 text-sm font-medium hover:bg-accent transition-colors whitespace-nowrap"
-               title="Download a ZIP containing CSVs of every contact, message, email, reminder, group, and tag in this workspace.">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>
-                Export data
-            </a>
-            @endif
         </div>
 
         @if ($canManage)

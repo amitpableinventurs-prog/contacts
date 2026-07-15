@@ -143,9 +143,6 @@ $brand = app(\App\Settings\GeneralSettings::class);
                 @endforeach
                 <x-ui.dropdown-menu-separator />
             @endif
-            @if ($isAdminPlus)
-                <x-ui.dropdown-menu-item :href="route('workspace.export')">Export workspace data</x-ui.dropdown-menu-item>
-            @endif
         </x-ui.dropdown-menu>
     @endif
 @endif
