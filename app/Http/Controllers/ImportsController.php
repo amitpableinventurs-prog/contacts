@@ -131,19 +131,34 @@ class ImportsController extends Controller
             $stored = $uploaded->store('imports', 'local');
         }
 
-        $rows = $this->readCsv(Storage::disk('local')->path($stored), 10);
-
-        if (count($rows) < 2) {
+        $preview = $this->buildMappingPreview($stored);
+        if (! $preview) {
             return back()->withErrors(['csv' => 'CSV is empty or has no data rows.']);
         }
 
+        return view('imports.preview', $preview);
+    }
+
+    /**
+     * Re-read a previously-uploaded CSV and build the data the mapping page
+     * needs. Used both for the initial upload and to re-render the mapping
+     * page (with the user's own column choices preserved) if a later step —
+     * e.g. PIN verification in store() — fails validation.
+     */
+    protected function buildMappingPreview(string $stored, ?array $selectedMapping = null): ?array
+    {
+        $rows = $this->readCsv(Storage::disk('local')->path($stored), 10);
+
+        if (count($rows) < 2) {
+            return null;
+        }
+
         $headers = array_map(fn ($h) => trim((string) $h), $rows[0]);
-        $sample = array_slice($rows, 1, 5);
 
         $autoMap = [];
         foreach ($headers as $idx => $header) {
             $lower = strtolower($header);
-            $autoMap[$idx] = match (true) {
+            $autoMap[$idx] = $selectedMapping[$idx] ?? match (true) {
                 str_contains($lower, 'name') => 'name',
                 str_contains($lower, 'mail') => 'email',
                 str_contains($lower, 'phone') || str_contains($lower, 'mobile') || str_contains($lower, 'tel') => 'phone',
@@ -158,16 +173,14 @@ class ImportsController extends Controller
             };
         }
 
-        $groups = Group::orderBy('name')->get();
-
-        return view('imports.preview', [
+        return [
             'file' => $stored,
             'headers' => $headers,
-            'sample' => $sample,
+            'sample' => array_slice($rows, 1, 5),
             'autoMap' => $autoMap,
             'fields' => self::FIELDS,
-            'groups' => $groups,
-        ]);
+            'groups' => Group::orderBy('name')->get(),
+        ];
     }
 
     /**
@@ -175,12 +188,13 @@ class ImportsController extends Controller
      * Large files (lakhs of rows) are processed in small ticks driven by the
      * progress page, so no single request can hit PHP or gateway timeouts.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): View|RedirectResponse
     {
         Gate::authorize('manage-imports');
 
         $data = $request->validate([
             'file'           => ['required', 'string'],
+            'pin'            => ['required', 'string'],
             'group_id'       => ['nullable', 'integer'],
             'has_header'     => ['nullable', 'boolean'],
             'mapping'        => ['required', 'array'],
@@ -193,6 +207,15 @@ class ImportsController extends Controller
         $path = Storage::disk('local')->path($relative);
         if (! str_starts_with($relative, 'imports/') || str_contains($relative, '..') || ! is_file($path)) {
             return redirect()->route('imports.form')->withErrors(['file' => 'Upload expired — please try again.']);
+        }
+
+        if ($data['pin'] !== env('EXPORT_PIN')) {
+            $preview = $this->buildMappingPreview($relative, $data['mapping']);
+            if (! $preview) {
+                return redirect()->route('imports.form')->withErrors(['file' => 'Upload expired — please try again.']);
+            }
+
+            return view('imports.preview', $preview)->withErrors(['pin' => 'Incorrect PIN.']);
         }
 
         $mapping = array_filter($data['mapping']);

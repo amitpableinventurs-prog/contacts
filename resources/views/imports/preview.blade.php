@@ -88,6 +88,16 @@
                 </x-ui.card-content>
             </x-ui.card>
 
+            <x-ui.card class="mt-4">
+                <x-ui.card-content class="p-6 space-y-2">
+                    <x-ui.label for="pin">Import PIN</x-ui.label>
+                    <x-ui.input id="pin" name="pin" type="password" placeholder="Enter PIN" maxlength="6" class="max-w-xs" required />
+                    @error('pin')
+                        <p class="text-xs text-destructive">{{ $message }}</p>
+                    @enderror
+                </x-ui.card-content>
+            </x-ui.card>
+
             @error('mapping')
                 <p class="mt-2 text-sm text-destructive">{{ $message }}</p>
             @enderror

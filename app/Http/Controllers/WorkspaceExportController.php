@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use App\Models\Group;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -41,26 +42,34 @@ class WorkspaceExportController extends Controller
         $filename = "contacts-{$stem}-" . now()->format('Ymd') . ".csv";
 
         $groupNames = Group::where('team_id', $team->id)->pluck('name', 'id');
+        $ownerNames = User::whereIn('id', Contact::where('team_id', $team->id)->pluck('owner_id')->unique())
+            ->pluck('name', 'id');
 
-        return response()->streamDownload(function () use ($team, $groupNames) {
+        return response()->streamDownload(function () use ($team, $groupNames, $ownerNames) {
             set_time_limit(0);
 
             $fp = fopen('php://output', 'w');
 
-            fputcsv($fp, ['Name', 'Email', 'Phone', 'City', 'Birthday', 'Company', 'Job Title', 'Website', 'Address', 'Status', 'Rating', 'Lifecycle Stage', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Group', 'Created At', 'Last Contacted']);
+            fputcsv($fp, ['Name', 'Email', 'Phone', 'Phone Country', 'City', 'Birthday', 'Company', 'Job Title', 'Website', 'Address', 'Status', 'Rating', 'Lifecycle Stage', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Group', 'Tags', 'Custom Fields', 'Owner', 'Created At', 'Last Contacted']);
 
             $query = Contact::where('team_id', $team->id)
                 ->where(function ($q) {
                     $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
                 })
-                ->select(['id', 'name', 'email', 'phone', 'city', 'birthday', 'company', 'job_title', 'website', 'address', 'status', 'rating', 'notes', 'admin_comment', 'facebook', 'twitter', 'linkedin', 'lifecycle_stage', 'group_id', 'created_at', 'last_contacted_at']);
+                ->with('tags:id,name')
+                ->select(['id', 'name', 'email', 'phone', 'phone_country', 'city', 'birthday', 'company', 'job_title', 'website', 'address', 'status', 'rating', 'notes', 'admin_comment', 'facebook', 'twitter', 'linkedin', 'lifecycle_stage', 'group_id', 'owner_id', 'custom_fields', 'created_at', 'last_contacted_at']);
 
             $rows = 0;
             foreach ($query->lazyById(1000) as $c) {
+                $customFields = collect($c->custom_fields ?? [])
+                    ->map(fn ($value, $key) => "{$key}: {$value}")
+                    ->implode('; ');
+
                 fputcsv($fp, [
                     $c->name,
                     $c->email ?? '',
                     $c->phone ?? '',
+                    $c->phone_country ?? '',
                     $c->city ?? '',
                     $c->birthday?->format('Y-m-d') ?? '',
                     $c->company ?? '',
@@ -76,6 +85,9 @@ class WorkspaceExportController extends Controller
                     $c->twitter ?? '',
                     $c->linkedin ?? '',
                     $c->group_id ? ($groupNames[$c->group_id] ?? '') : '',
+                    $c->tags->pluck('name')->implode(', '),
+                    $customFields,
+                    $c->owner_id ? ($ownerNames[$c->owner_id] ?? '') : '',
                     $c->created_at?->format('Y-m-d'),
                     $c->last_contacted_at?->format('Y-m-d'),
                 ]);

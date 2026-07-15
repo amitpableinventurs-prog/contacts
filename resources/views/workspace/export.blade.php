@@ -34,7 +34,7 @@
 
                     <div class="pt-4 border-t text-sm text-muted-foreground">
                         <p><strong>Exported fields:</strong></p>
-                        <p>Name, Email, Phone, City, Birthday, Company, Job Title, Website, Address, Status, Rating, Lifecycle Stage, Notes, Comment, Facebook, Twitter, LinkedIn, Group, Created At, Last Contacted</p>
+                        <p>Name, Email, Phone, Phone Country, City, Birthday, Company, Job Title, Website, Address, Status, Rating, Lifecycle Stage, Notes, Comment, Facebook, Twitter, LinkedIn, Group, Tags, Custom Fields, Owner, Created At, Last Contacted</p>
                     </div>
                 </x-ui.card-content>
             </x-ui.card>
