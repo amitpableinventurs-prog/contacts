@@ -66,11 +66,13 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                             <x-ui.textarea id="admin_comment" name="admin_comment" rows="2" maxlength="100" {{ !$canEdit ? 'disabled' : '' }}>{{ old('admin_comment', $contact?->admin_comment) }}</x-ui.textarea>
                             @error('admin_comment') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                         </div>
-                    @elseif ($contact?->admin_comment)
-                        <div class="space-y-1.5 sm:col-span-2">
-                            <x-ui.label>Comment <span class="text-xs font-normal text-muted-foreground">(only Super Admin can edit)</span></x-ui.label>
-                            <p class="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm whitespace-pre-line">{{ $contact->admin_comment }}</p>
-                        </div>
+                    @else
+                        @if ($contact?->admin_comment)
+                            <div class="space-y-1.5 sm:col-span-2">
+                                <x-ui.label>Comment <span class="text-xs font-normal text-muted-foreground">(only Super Admin can edit)</span></x-ui.label>
+                                <p class="rounded-md border border-input bg-muted/30 px-3 py-2 text-sm whitespace-pre-line">{{ $contact->admin_comment }}</p>
+                            </div>
+                        @endif
                     @endif
                 </div>
             </x-ui.card-content>
