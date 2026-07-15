@@ -31,6 +31,7 @@
 <?php $component = $__componentOriginald04dd79f9e235eb8e58dee4526a2f3c2; ?>
 <?php unset($__componentOriginald04dd79f9e235eb8e58dee4526a2f3c2); ?>
 <?php endif; ?>
+                <span class="max-w-[110px] truncate text-sm font-medium sm:max-w-[160px]"><?php echo e(auth()->user()->name); ?></span>
             </button>
          <?php $__env->endSlot(); ?>
 
@@ -77,7 +78,7 @@
 <?php $component = $__componentOriginale61527cd5af239231438271d50ff42a5; ?>
 <?php unset($__componentOriginale61527cd5af239231438271d50ff42a5); ?>
 <?php endif; ?>
-        <?php if(!auth()->user()->isManager()): ?>
+        <?php if(auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN)): ?>
             <?php if (isset($component)) { $__componentOriginale61527cd5af239231438271d50ff42a5 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginale61527cd5af239231438271d50ff42a5 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.dropdown-menu-item','data' => ['href' => route('api-tokens.index')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>

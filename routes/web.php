@@ -88,6 +88,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/contacts/{contact}', [ContactsController::class, 'destroy'])->name('contacts.destroy');
     Route::post('/contacts/{contact}/suspend', [ContactsController::class, 'suspend'])->name('contacts.suspend');
     Route::post('/contacts/{contact}/ban', [ContactsController::class, 'ban'])->name('contacts.ban');
+    Route::post('/contacts/{contact}/reactivate', [ContactsController::class, 'reactivate'])->name('contacts.reactivate');
     Route::post('/contacts/{contact}/rate', [ContactsController::class, 'rate'])->name('contacts.rate');
     Route::get('/contacts/{contact}/merge', [ContactsController::class, 'merge'])->name('contacts.merge');
     Route::post('/contacts/{contact}/merge', [ContactsController::class, 'mergeStore'])->name('contacts.merge.store');

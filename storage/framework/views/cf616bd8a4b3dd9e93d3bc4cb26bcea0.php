@@ -2,16 +2,22 @@
 $navItems = [
     ['label' => 'Dashboard', 'route' => 'dashboard'],
     ['label' => 'Contacts',  'route' => 'contacts.index'],
-    ['label' => 'New contact', 'route' => 'contacts.create'],
-    ['label' => 'Import CSV', 'route' => 'imports.form'],
+    auth()->user()?->can('create', \App\Models\Contact::class)
+        ? ['label' => 'New contact', 'route' => 'contacts.create']
+        : null,
+    \Illuminate\Support\Facades\Gate::allows('manage-imports')
+        ? ['label' => 'Import CSV', 'route' => 'imports.form']
+        : null,
     ['label' => 'Messages',  'route' => 'sms.index'],
     ['label' => 'Calls',     'route' => 'calls.index'],
     ['label' => 'Email',     'route' => 'emails.index'],
     ['label' => 'Compose email', 'route' => 'emails.create'],
     ['label' => 'Settings',  'route' => 'settings.general'],
-    ['label' => 'API tokens','route' => 'api-tokens.index'],
+    auth()->user()?->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN)
+        ? ['label' => 'API tokens','route' => 'api-tokens.index']
+        : null,
 ];
-$nav = collect($navItems)->filter(fn ($i) => \Illuminate\Support\Facades\Route::has($i['route']))->values();
+$nav = collect($navItems)->filter()->filter(fn ($i) => \Illuminate\Support\Facades\Route::has($i['route']))->values();
 ?>
 
 <div x-data="{

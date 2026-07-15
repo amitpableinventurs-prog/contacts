@@ -369,6 +369,13 @@ class ContactsController extends Controller
         return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} banned."]);
     }
 
+    public function reactivate(Contact $contact): RedirectResponse
+    {
+        Gate::authorize('update', $contact);
+        $contact->update(['status' => 'active']);
+        return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} reactivated."]);
+    }
+
     // ------------------------------------------------------------------
     // Approval workflow (Clerk submits → Manager approves/rejects)
     // ------------------------------------------------------------------

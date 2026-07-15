@@ -102,9 +102,9 @@ $primaryHsl = \App\Support\ColorHelper::hexToHslVar($brand->primary_color);
                 <span class="sr-only">Open sidebar</span>
             </button>
 
-            <div class="flex-1">
+            <div class="flex-1 min-w-0">
                 <?php if(isset($header)): ?>
-                    <div class="text-sm text-muted-foreground"><?php echo e($header); ?></div>
+                    <div class="text-sm text-muted-foreground truncate"><?php echo e($header); ?></div>
                 <?php endif; ?>
             </div>
 
@@ -227,6 +227,8 @@ $primaryHsl = \App\Support\ColorHelper::hexToHslVar($brand->primary_color);
     </script>
     <?php endif; ?>
 <?php endif; ?>
+
+<?php echo $__env->yieldPushContent('scripts'); ?>
 
 </body>
 </html>

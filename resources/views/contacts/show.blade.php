@@ -86,14 +86,12 @@
                         @if ($contact->status !== 'banned')
                             <form method="POST" action="{{ route('contacts.ban', $contact) }}">
                                 @csrf
-                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-600">Ban</x-ui.dropdown-menu-item>
+                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-700">Ban</x-ui.dropdown-menu-item>
                             </form>
                         @endif
                         @if ($contact->status !== 'active')
-                            <form method="POST" action="{{ route('contacts.update', $contact) }}">
-                                @csrf @method('PUT')
-                                <input type="hidden" name="name" value="{{ $contact->name }}" />
-                                <input type="hidden" name="status" value="active" />
+                            <form method="POST" action="{{ route('contacts.reactivate', $contact) }}">
+                                @csrf
                                 <x-ui.dropdown-menu-item as="button" type="submit">Reactivate</x-ui.dropdown-menu-item>
                             </form>
                         @endif
@@ -124,7 +122,7 @@
                         @if ($contact->status === 'suspended')
                             <span class="mt-1 inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">Suspended</span>
                         @elseif ($contact->status === 'banned')
-                            <span class="mt-1 inline-flex items-center rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">Banned</span>
+                            <span class="mt-1 inline-flex items-center rounded-md bg-red-700 px-2 py-0.5 text-xs font-semibold text-white">Banned</span>
                         @endif
 
                         <div class="mt-2 flex flex-wrap items-center justify-center gap-1.5">
@@ -315,7 +313,7 @@
                         </x-ui.card>
                     </x-ui.tabs-content>
 
-                    {{-- Notes: everyone can view; only Manager+ can add/delete --}}
+                    {{-- Notes: everyone (including Clerks) can view and add; only Manager+ can delete --}}
                     <x-ui.tabs-content value="notes">
                         <div class="space-y-3">
                             {{-- Add note form --}}

@@ -51,8 +51,10 @@ $nav = array_filter([
                 ? ['name' => 'Groups', 'route' => 'groups.index',
                    'icon' => 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10']
                 : null,
-            ['name' => 'Tags', 'route' => 'tags.index',
-             'icon' => 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z'],
+            $isManagerPlus
+                ? ['name' => 'Tags', 'route' => 'tags.index',
+                   'icon' => 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z']
+                : null,
             $isManagerPlus
                 ? ['name' => 'Reminders', 'route' => 'reminders.index',
                    'icon' => 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9']
@@ -64,7 +66,7 @@ $nav = array_filter([
     [
         'label' => 'Admin',
         'items' => array_values(array_filter([
-            $isAdminPlus
+            $isManagerPlus
                 ? ['name' => 'Users', 'route' => 'users.index',
                    'icon' => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z']
                 : null,
@@ -104,10 +106,17 @@ $brand = app(\App\Settings\GeneralSettings::class);
 </div>
 
 <?php if($currentTeam): ?>
-    <?php
-        $allTeams = $user->ownedTeams->merge($user->teams)->unique('id');
-    ?>
-    <?php if (isset($component)) { $__componentOriginalfb0facb2aa98dc94afaec95e8f63118b = $component; } ?>
+    <?php if($isClerk): ?>
+        
+        <div class="w-full px-4 py-3 border-b text-left">
+            <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
+            <div class="mt-0.5 text-sm font-medium truncate"><?php echo e($currentTeam->name); ?></div>
+        </div>
+    <?php else: ?>
+        <?php
+            $allTeams = $user->ownedTeams->merge($user->teams)->unique('id');
+        ?>
+        <?php if (isset($component)) { $__componentOriginalfb0facb2aa98dc94afaec95e8f63118b = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalfb0facb2aa98dc94afaec95e8f63118b = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.dropdown-menu','data' => ['align' => 'start','width' => 'w-56']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('ui.dropdown-menu'); ?>
@@ -117,23 +126,23 @@ $brand = app(\App\Settings\GeneralSettings::class);
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['align' => 'start','width' => 'w-56']); ?>
-         <?php $__env->slot('trigger', null, []); ?> 
-            <button class="w-full px-4 py-3 border-b text-left hover:bg-accent/40 transition-colors">
-                <div class="flex items-center gap-2">
-                    <div class="flex-1 min-w-0">
-                        <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
-                        <div class="mt-0.5 text-sm font-medium truncate"><?php echo e($currentTeam->name); ?></div>
+             <?php $__env->slot('trigger', null, []); ?> 
+                <button class="w-full px-4 py-3 border-b text-left hover:bg-accent/40 transition-colors">
+                    <div class="flex items-center gap-2">
+                        <div class="flex-1 min-w-0">
+                            <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
+                            <div class="mt-0.5 text-sm font-medium truncate"><?php echo e($currentTeam->name); ?></div>
+                        </div>
+                        <svg class="h-3 w-3 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
                     </div>
-                    <svg class="h-3 w-3 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
-                </div>
-            </button>
-         <?php $__env->endSlot(); ?>
-        <?php if($allTeams->count() > 1): ?>
-            <div class="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Switch workspace</div>
-            <?php $__currentLoopData = $allTeams; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <form method="POST" action="<?php echo e(route('workspace.switch', $t)); ?>">
-                    <?php echo csrf_field(); ?>
-                    <?php if (isset($component)) { $__componentOriginale61527cd5af239231438271d50ff42a5 = $component; } ?>
+                </button>
+             <?php $__env->endSlot(); ?>
+            <?php if($allTeams->count() > 1): ?>
+                <div class="px-2 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground">Switch workspace</div>
+                <?php $__currentLoopData = $allTeams; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $t): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <form method="POST" action="<?php echo e(route('workspace.switch', $t)); ?>">
+                        <?php echo csrf_field(); ?>
+                        <?php if (isset($component)) { $__componentOriginale61527cd5af239231438271d50ff42a5 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginale61527cd5af239231438271d50ff42a5 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.dropdown-menu-item','data' => ['as' => 'button','type' => 'submit']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('ui.dropdown-menu-item'); ?>
@@ -143,11 +152,11 @@ $brand = app(\App\Settings\GeneralSettings::class);
 <?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['as' => 'button','type' => 'submit']); ?>
-                        <span class="flex-1 truncate"><?php echo e($t->name); ?></span>
-                        <?php if($t->id === $currentTeam->id): ?>
-                            <svg class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                        <?php endif; ?>
-                     <?php echo $__env->renderComponent(); ?>
+                            <span class="flex-1 truncate"><?php echo e($t->name); ?></span>
+                            <?php if($t->id === $currentTeam->id): ?>
+                                <svg class="h-3.5 w-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                            <?php endif; ?>
+                         <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginale61527cd5af239231438271d50ff42a5)): ?>
 <?php $attributes = $__attributesOriginale61527cd5af239231438271d50ff42a5; ?>
@@ -157,9 +166,9 @@ $brand = app(\App\Settings\GeneralSettings::class);
 <?php $component = $__componentOriginale61527cd5af239231438271d50ff42a5; ?>
 <?php unset($__componentOriginale61527cd5af239231438271d50ff42a5); ?>
 <?php endif; ?>
-                </form>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-            <?php if (isset($component)) { $__componentOriginalf65d96b0176bd59b5a21f3499c9aac29 = $component; } ?>
+                    </form>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php if (isset($component)) { $__componentOriginalf65d96b0176bd59b5a21f3499c9aac29 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginalf65d96b0176bd59b5a21f3499c9aac29 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.dropdown-menu-separator','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('ui.dropdown-menu-separator'); ?>
@@ -179,9 +188,9 @@ $brand = app(\App\Settings\GeneralSettings::class);
 <?php $component = $__componentOriginalf65d96b0176bd59b5a21f3499c9aac29; ?>
 <?php unset($__componentOriginalf65d96b0176bd59b5a21f3499c9aac29); ?>
 <?php endif; ?>
-        <?php endif; ?>
-        <?php if($isAdminPlus): ?>
-            <?php if (isset($component)) { $__componentOriginale61527cd5af239231438271d50ff42a5 = $component; } ?>
+            <?php endif; ?>
+            <?php if($isAdminPlus): ?>
+                <?php if (isset($component)) { $__componentOriginale61527cd5af239231438271d50ff42a5 = $component; } ?>
 <?php if (isset($attributes)) { $__attributesOriginale61527cd5af239231438271d50ff42a5 = $attributes; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.dropdown-menu-item','data' => ['href' => route('workspace.export')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
 <?php $component->withName('ui.dropdown-menu-item'); ?>
@@ -200,8 +209,8 @@ $brand = app(\App\Settings\GeneralSettings::class);
 <?php $component = $__componentOriginale61527cd5af239231438271d50ff42a5; ?>
 <?php unset($__componentOriginale61527cd5af239231438271d50ff42a5); ?>
 <?php endif; ?>
-        <?php endif; ?>
-     <?php echo $__env->renderComponent(); ?>
+            <?php endif; ?>
+         <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__attributesOriginalfb0facb2aa98dc94afaec95e8f63118b)): ?>
 <?php $attributes = $__attributesOriginalfb0facb2aa98dc94afaec95e8f63118b; ?>
@@ -211,6 +220,7 @@ $brand = app(\App\Settings\GeneralSettings::class);
 <?php $component = $__componentOriginalfb0facb2aa98dc94afaec95e8f63118b; ?>
 <?php unset($__componentOriginalfb0facb2aa98dc94afaec95e8f63118b); ?>
 <?php endif; ?>
+    <?php endif; ?>
 <?php endif; ?>
 
 
@@ -264,6 +274,6 @@ $brand = app(\App\Settings\GeneralSettings::class);
 </nav>
 
 <div class="border-t p-3 text-xs text-muted-foreground">
-    <span class="opacity-70">v2.0</span>
+    <span class="opacity-70">&copy; <?php echo e(date('Y')); ?> <?php echo e($brand->app_name); ?></span>
 </div>
 <?php /**PATH D:\xampp_lite\xampp_lite_8_3\www\laracontact\resources\views/components/app/sidebar.blade.php ENDPATH**/ ?>
