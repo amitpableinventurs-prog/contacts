@@ -19,22 +19,24 @@
                 </div>
             </div>
 
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <div class="max-w-xl space-y-2">
-                    <h2 class="text-lg font-medium">Two-factor authentication</h2>
-                    <p class="text-sm text-muted-foreground">
-                        @if (auth()->user()->two_factor_confirmed_at)
-                            Enabled — your account requires a 6-digit code at every sign-in.
-                        @else
-                            Add an extra layer of security by requiring a code from your authenticator app.
-                        @endif
-                    </p>
-                    <a href="{{ route('two-factor.show') }}"
-                       class="inline-flex h-9 items-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent">
-                        {{ auth()->user()->two_factor_confirmed_at ? 'Manage 2FA' : 'Set up 2FA' }} →
-                    </a>
+            @unless (auth()->user()->isClerk())
+                <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
+                    <div class="max-w-xl space-y-2">
+                        <h2 class="text-lg font-medium">Two-factor authentication</h2>
+                        <p class="text-sm text-muted-foreground">
+                            @if (auth()->user()->two_factor_confirmed_at)
+                                Enabled — your account requires a 6-digit code at every sign-in.
+                            @else
+                                Add an extra layer of security by requiring a code from your authenticator app.
+                            @endif
+                        </p>
+                        <a href="{{ route('two-factor.show') }}"
+                           class="inline-flex h-9 items-center rounded-md border border-input bg-background px-4 text-sm font-medium hover:bg-accent">
+                            {{ auth()->user()->two_factor_confirmed_at ? 'Manage 2FA' : 'Set up 2FA' }} →
+                        </a>
+                    </div>
                 </div>
-            </div>
+            @endunless
 
             <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
                 <div class="max-w-xl">

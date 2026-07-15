@@ -226,9 +226,7 @@
                 <x-ui.tabs default="activity">
                     <x-ui.tabs-list>
                         <x-ui.tabs-trigger value="activity">Activity</x-ui.tabs-trigger>
-                        @can('addNote', $contact)
-                            <x-ui.tabs-trigger value="notes">Notes ({{ $contact->contactNotes->count() }})</x-ui.tabs-trigger>
-                        @endcan
+                        <x-ui.tabs-trigger value="notes">Notes ({{ $contact->contactNotes->count() }})</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="history">History ({{ $contact->editHistories->count() }})</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="description">Description</x-ui.tabs-trigger>
                         <x-ui.tabs-trigger value="files">Files ({{ $contact->files->count() }})</x-ui.tabs-trigger>
@@ -317,11 +315,11 @@
                         </x-ui.card>
                     </x-ui.tabs-content>
 
-                    {{-- Notes (hidden from clerks — they only see the admin comment) --}}
-                    @can('addNote', $contact)
+                    {{-- Notes: everyone can view; only Manager+ can add/delete --}}
                     <x-ui.tabs-content value="notes">
                         <div class="space-y-3">
                             {{-- Add note form --}}
+                            @can('addNote', $contact)
                             <x-ui.card>
                                 <x-ui.card-header><x-ui.card-title>Add note</x-ui.card-title></x-ui.card-header>
                                 <x-ui.card-content>
@@ -333,6 +331,7 @@
                                     </form>
                                 </x-ui.card-content>
                             </x-ui.card>
+                            @endcan
 
                             {{-- Quick notes field (plain text column) --}}
                             @if ($contact->getAttributes()['notes'] ?? null)
@@ -372,7 +371,6 @@
                             @endforelse
                         </div>
                     </x-ui.tabs-content>
-                    @endcan
 
                     {{-- Description --}}
                     <x-ui.tabs-content value="description">
