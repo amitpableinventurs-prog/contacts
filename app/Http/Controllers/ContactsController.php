@@ -449,6 +449,22 @@ class ContactsController extends Controller
         return back()->with('toast', ['type' => 'success', 'message' => 'Note added.']);
     }
 
+    public function updateNote(Request $request, Contact $contact, ContactNote $note): RedirectResponse
+    {
+        Gate::authorize('editNote', $note);
+        abort_unless($note->contact_id === $contact->id, 403);
+
+        $request->validate(['note_html' => ['required', 'string', 'max:10000']]);
+        $note->update(['note_html' => $request->input('note_html')]);
+
+        ActivityLogger::log('note.updated', $contact, [
+            'name' => $contact->name,
+            'note' => Str::limit($request->input('note_html'), 100),
+        ]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => 'Note updated.']);
+    }
+
     public function destroyNote(Contact $contact, ContactNote $note): RedirectResponse
     {
         Gate::authorize('manage', $contact);

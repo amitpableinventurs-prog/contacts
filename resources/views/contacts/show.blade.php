@@ -345,25 +345,42 @@
 
                             {{-- Relational notes --}}
                             @forelse ($contact->contactNotes->sortByDesc('created_at') as $note)
-                                <x-ui.card>
+                                <x-ui.card x-data="{ editing_{{ $note->id }}: false }">
                                     <x-ui.card-content class="p-4">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                                        <div class="flex items-start justify-between gap-3 mb-2">
+                                            <div class="flex items-center gap-2 text-xs text-muted-foreground">
                                                 <x-ui.avatar :name="$note->author?->name ?? 'User'" size="xs" />
                                                 <span>{{ $note->author?->name ?? 'Unknown' }}</span>
                                                 <span>·</span>
                                                 <span>{{ $note->created_at->diffForHumans() }}</span>
                                             </div>
-                                            @can('manage', $contact)
-                                                <form method="POST" action="{{ route('contacts.notes.destroy', [$contact, $note]) }}">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="text-muted-foreground hover:text-destructive" title="Delete note">
-                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <div class="flex items-center gap-1">
+                                                @can('editNote', $note)
+                                                    <button @click="editing_{{ $note->id }} = !editing_{{ $note->id }}" class="text-muted-foreground hover:text-foreground" title="Edit note">
+                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                                     </button>
-                                                </form>
-                                            @endcan
+                                                @endcan
+                                                @can('manage', $contact)
+                                                    <form method="POST" action="{{ route('contacts.notes.destroy', [$contact, $note]) }}" class="inline">
+                                                        @csrf @method('DELETE')
+                                                        <button type="submit" class="text-muted-foreground hover:text-destructive" title="Delete note">
+                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                        </button>
+                                                    </form>
+                                                @endcan
+                                            </div>
                                         </div>
-                                        <p class="text-sm whitespace-pre-line">{!! nl2br(e($note->note_html)) !!}</p>
+                                        <div x-show="!editing_{{ $note->id }}" class="text-sm whitespace-pre-line">{!! nl2br(e($note->note_html)) !!}</div>
+                                        @can('editNote', $note)
+                                            <form method="POST" action="{{ route('contacts.notes.update', [$contact, $note]) }}" x-show="editing_{{ $note->id }}" x-cloak class="space-y-2">
+                                                @csrf @method('PATCH')
+                                                <x-ui.textarea name="note_html" rows="3" required>{{ $note->note_html }}</x-ui.textarea>
+                                                <div class="flex gap-2">
+                                                    <x-ui.button type="submit" size="sm">Save</x-ui.button>
+                                                    <button type="button" @click="editing_{{ $note->id }} = false" class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors hover:bg-accent focus-ring">Cancel</button>
+                                                </div>
+                                            </form>
+                                        @endcan
                                     </x-ui.card-content>
                                 </x-ui.card>
                             @empty

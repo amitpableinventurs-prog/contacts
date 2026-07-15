@@ -94,6 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/contacts/{contact}/merge', [ContactsController::class, 'mergeStore'])->name('contacts.merge.store');
     // Notes
     Route::post('/contacts/{contact}/notes', [ContactsController::class, 'storeNote'])->name('contacts.notes.store');
+    Route::patch('/contacts/{contact}/notes/{note}', [ContactsController::class, 'updateNote'])->name('contacts.notes.update');
     Route::delete('/contacts/{contact}/notes/{note}', [ContactsController::class, 'destroyNote'])->name('contacts.notes.destroy');
     // Files
     Route::post('/contacts/{contact}/files', [ContactsController::class, 'storeFile'])->name('contacts.files.store');
