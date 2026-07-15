@@ -33,37 +33,37 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
                     <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="phone">Phone / Number <span class="text-destructive">*</span></x-ui.label>
                         <input type="hidden" id="phone_country" name="phone_country" value="{{ old('phone_country', $contact?->phone_country ?: 'in') }}" />
-                        <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="98765 43210" required autofocus {{ !$canEdit ? 'disabled' : '' }} />
+                        <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="98765 43210" required autofocus :disabled="!$canEdit" />
                         @error('phone') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="name">Name <span class="text-destructive">*</span></x-ui.label>
-                        <x-ui.input id="name" name="name" value="{{ old('name', $contact?->name) }}" required {{ !$canEdit ? 'disabled' : '' }} />
+                        <x-ui.input id="name" name="name" value="{{ old('name', $contact?->name) }}" required :disabled="!$canEdit" />
                         @error('name') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1.5">
                         <x-ui.label for="email">Email</x-ui.label>
-                        <x-ui.input id="email" name="email" type="email" value="{{ old('email', $contact?->email) }}" {{ !$canEdit ? 'disabled' : '' }} />
+                        <x-ui.input id="email" name="email" type="email" value="{{ old('email', $contact?->email) }}" :disabled="!$canEdit" />
                         @error('email') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1.5">
                         <x-ui.label for="city">City</x-ui.label>
-                        <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" {{ !$canEdit ? 'disabled' : '' }} />
+                        <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" :disabled="!$canEdit" />
                     </div>
 
                     <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="address">Address</x-ui.label>
-                        <x-ui.textarea id="address" name="address" rows="2" {{ !$canEdit ? 'disabled' : '' }}>{{ old('address', $contact?->address) }}</x-ui.textarea>
+                        <x-ui.textarea id="address" name="address" rows="2" :disabled="!$canEdit">{{ old('address', $contact?->address) }}</x-ui.textarea>
                     </div>
 
                     {{-- Comment: every role sees it, only Super Admin can edit --}}
                     @if (auth()->user()->isSuperAdmin())
                         <div class="space-y-1.5 sm:col-span-2">
                             <x-ui.label for="admin_comment">Comment <span class="text-xs font-normal text-muted-foreground">(visible to all roles — only Super Admin can edit, max 100 characters)</span></x-ui.label>
-                            <x-ui.textarea id="admin_comment" name="admin_comment" rows="2" maxlength="100" {{ !$canEdit ? 'disabled' : '' }}>{{ old('admin_comment', $contact?->admin_comment) }}</x-ui.textarea>
+                            <x-ui.textarea id="admin_comment" name="admin_comment" rows="2" maxlength="100" :disabled="!$canEdit">{{ old('admin_comment', $contact?->admin_comment) }}</x-ui.textarea>
                             @error('admin_comment') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                         </div>
                     @else
@@ -169,15 +169,15 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
             <x-ui.card-content x-show="open" x-transition class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="space-y-1.5">
                     <x-ui.label for="twitter">X / Twitter</x-ui.label>
-                    <x-ui.input id="twitter" name="twitter" value="{{ old('twitter', $contact?->twitter) }}" placeholder="@username" {{ !$canEdit ? 'disabled' : '' }} />
+                    <x-ui.input id="twitter" name="twitter" value="{{ old('twitter', $contact?->twitter) }}" placeholder="@username" :disabled="!$canEdit" />
                 </div>
                 <div class="space-y-1.5">
                     <x-ui.label for="linkedin">LinkedIn</x-ui.label>
-                    <x-ui.input id="linkedin" name="linkedin" value="{{ old('linkedin', $contact?->linkedin) }}" placeholder="username" {{ !$canEdit ? 'disabled' : '' }} />
+                    <x-ui.input id="linkedin" name="linkedin" value="{{ old('linkedin', $contact?->linkedin) }}" placeholder="username" :disabled="!$canEdit" />
                 </div>
                 <div class="space-y-1.5">
                     <x-ui.label for="facebook">Facebook</x-ui.label>
-                    <x-ui.input id="facebook" name="facebook" value="{{ old('facebook', $contact?->facebook) }}" placeholder="username" {{ !$canEdit ? 'disabled' : '' }} />
+                    <x-ui.input id="facebook" name="facebook" value="{{ old('facebook', $contact?->facebook) }}" placeholder="username" :disabled="!$canEdit" />
                 </div>
             </x-ui.card-content>
         </x-ui.card>
@@ -294,7 +294,7 @@ $selectedTagIds = $contact?->tags->pluck('id')->all() ?? old('tags', []);
 
 <div class="mt-6 flex items-center justify-end gap-2">
     <a href="{{ url()->previous() }}" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent focus-ring">Cancel</a>
-    <x-ui.button type="submit" {{ !$canEdit ? 'disabled' : '' }}>{{ $contact ? 'Save changes' : 'Create contact' }}</x-ui.button>
+    <x-ui.button type="submit" :disabled="!$canEdit">{{ $contact ? 'Save changes' : 'Create contact' }}</x-ui.button>
 </div>
 
 @push('head')
