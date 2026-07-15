@@ -19,10 +19,8 @@ jobs:
           command_timeout: 5m
           script: |
             cd "$HOME/public_html/new_contacts"
-            echo "=== git status ==="
-            git log --oneline -1; git status --short
-            echo "=== local diff on _form.blade.php ==="
-            git diff -- resources/views/contacts/_form.blade.php
-            echo "=== diff stat (all files) ==="
-            git diff --stat
+            echo "=== discarding stale manual edit to _form.blade.php ==="
+            git checkout -- resources/views/contacts/_form.blade.php
+            echo "=== git status after checkout ==="
+            git status --short | grep -v '^?? ' || true
             echo "=== end ==="
