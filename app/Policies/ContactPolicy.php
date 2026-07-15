@@ -26,10 +26,11 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
-    // Every role assigned to the workspace can edit contact details.
+    // Manager and above can edit contact details. Clerks can only add notes.
     public function update(User $user, Contact $contact): bool
     {
-        return $contact->team_id === $user->current_team_id;
+        return $contact->team_id === $user->current_team_id
+            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
     // Manager and above can perform admin-level contact actions such as

@@ -46,10 +46,20 @@
             </div>
         </div>
 
-        <form action="{{ route('contacts.update', $contact) }}" method="POST" enctype="multipart/form-data">
+        @php
+            $canEdit = Auth::user()->can('update', $contact);
+        @endphp
+
+        @if (!$canEdit)
+            <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <strong>View-only mode:</strong> Clerks can only add notes. To edit contact fields, you need manager or higher privileges.
+            </div>
+        @endif
+
+        <form action="{{ route('contacts.update', $contact) }}" method="POST" enctype="multipart/form-data" @if (!$canEdit) onsubmit="return false;" @endif>
             @csrf
             @method('PUT')
-            @include('contacts._form', ['contact' => $contact, 'groups' => $groups, 'tags' => $tags])
+            @include('contacts._form', ['contact' => $contact, 'groups' => $groups, 'tags' => $tags, 'canEdit' => $canEdit])
         </form>
     </div>
 </x-app-layout>

@@ -257,7 +257,7 @@ class ContactsController extends Controller
 
     public function edit(Contact $contact): View
     {
-        Gate::authorize('update', $contact);
+        Gate::authorize('view', $contact);
 
         $teamId = Auth::user()->current_team_id;
         $groups = Group::where('team_id', $teamId)->orderBy('name')->get();
