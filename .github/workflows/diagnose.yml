@@ -20,39 +20,9 @@ jobs:
           script: |
             cd "$HOME/public_html/new_contacts"
             echo "=== git status ==="
-            git log --oneline -1; git status --short | head -20
-            echo "=== root .htaccess ==="
-            cat .htaccess
-            echo "=== public/.htaccess ==="
-            cat public/.htaccess
-            echo "=== php ==="
-            php -v | head -1
-            echo "=== composer candidates ==="
-            command -v composer || true
-            ls /opt/cpanel/composer/bin/composer 2>/dev/null || true
-            ls "$HOME/bin/composer" 2>/dev/null || true
-            echo "=== .env / caches ==="
-            ls -la .env bootstrap/cache/ | head -15
-            echo "=== vendor ==="
-            ls -d vendor 2>/dev/null && ls vendor | head -5 || echo "(no vendor dir)"
-            echo "=== php error_log tails ==="
-            tail -n 10 public/error_log 2>/dev/null || true
-            tail -n 10 bootstrap/error_log 2>/dev/null || true
-            echo "=== laravel.log tail ==="
-            tail -n 80 storage/logs/laravel.log 2>/dev/null || echo "(no laravel.log)"
-            echo "=== artisan ==="
-            php artisan --version || true
-            echo "=== install state ==="
-            ls -la storage/app/installed.lock 2>/dev/null || echo "(no installed.lock)"
-            echo "=== db data ==="
-            php artisan tinker --execute='echo "users=", \App\Models\User::count(), " contacts=", \App\Models\Contact::count(), "\n";' 2>&1 | tail -3 || true
-            echo "=== teams / users / membership ==="
-            php artisan tinker --execute='echo \App\Models\Team::query()->get(["id","name","owner_id"])->toJson(), "\n";' 2>&1 | tail -2
-            php artisan tinker --execute='echo \App\Models\User::query()->get(["id","role","current_team_id"])->toJson(), "\n";' 2>&1 | tail -2
-            php artisan tinker --execute='echo json_encode(\Illuminate\Support\Facades\DB::table("team_user")->get(["team_id","user_id","role"])), "\n";' 2>&1 | tail -2
-            echo "=== target contact lookup ==="
-            php artisan tinker --execute='echo \App\Models\Contact::where(fn($q) => $q->where("phone","like","%9503466923%")->orWhere("number","like","%9503466923%"))->get(["id","team_id","approval_status"])->toJson(), "\n";' 2>&1 | tail -2
-            php artisan tinker --execute='echo "contacts per team: ", json_encode(\App\Models\Contact::query()->selectRaw("team_id, count(*) c")->groupBy("team_id")->pluck("c","team_id")), "\n";' 2>&1 | tail -2
-            echo "=== root route on server ==="
-            php artisan route:list --path=/ 2>&1 | head -6
-            php artisan tinker --execute='try { $r = app("router")->getRoutes()->match(Illuminate\Http\Request::create("/", "GET")); echo "matched: ", implode("|", $r->methods()), " -> ", ($r->getActionName() ?: "closure"), "\n"; } catch (\Throwable $e) { echo get_class($e), ": ", $e->getMessage(), "\n"; }' 2>&1 | tail -3 || true
+            git log --oneline -1; git status --short
+            echo "=== local diff on _form.blade.php ==="
+            git diff -- resources/views/contacts/_form.blade.php
+            echo "=== diff stat (all files) ==="
+            git diff --stat
+            echo "=== end ==="
