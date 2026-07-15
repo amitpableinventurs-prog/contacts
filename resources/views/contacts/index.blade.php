@@ -281,7 +281,7 @@
                             @php
                                 // Row background: banned > suspended > rating
                                 if ($contact->status === 'banned') {
-                                    $rowStyle = 'background-color:#fef2f2;border-left:3px solid #ef4444;';
+                                    $rowStyle = 'background-color:#7f1d1d;border-left:3px solid #450a0a;color:#fff;';
                                 } elseif ($contact->status === 'suspended') {
                                     $rowStyle = 'background-color:#fff7ed;border-left:3px solid #f97316;';
                                 } elseif ((int)$contact->rating === 5) {
@@ -298,7 +298,12 @@
                                     $rowStyle = '';
                                 }
                             @endphp
-                            <x-ui.table-row style="{{ $rowStyle }}">
+                            <x-ui.table-row
+                                style="{{ $rowStyle }}"
+                                @class([
+                                    '[&_a]:text-white [&_.text-muted-foreground]:text-red-100 [&_svg]:text-red-100 hover:[background-color:#991b1b]' => $contact->status === 'banned',
+                                ])
+                            >
                                 @unless ($isClerk)
                                     <x-ui.table-cell>
                                         <input type="checkbox"
@@ -316,7 +321,7 @@
                                             <div class="font-medium group-hover:underline truncate flex items-center gap-1.5">
                                                 {{ $contact->name }}
                                                 @if ($contact->status === 'banned')
-                                                    <span style="font-size:10px;background:#fca5a5;color:#7f1d1d;padding:1px 5px;border-radius:4px;font-weight:600;">BANNED</span>
+                                                    <span style="font-size:10px;background:#450a0a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;border:1px solid #fecaca;">BANNED</span>
                                                 @elseif ($contact->status === 'suspended')
                                                     <span style="font-size:10px;background:#fed7aa;color:#7c2d12;padding:1px 5px;border-radius:4px;font-weight:600;">SUSPENDED</span>
                                                 @elseif ($contact->rating > 0)

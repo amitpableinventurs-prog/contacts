@@ -93,7 +93,7 @@ it('bulk-assigns contacts to a group', function () {
     expect(Contact::where('group_id', $group->id)->count())->toBe(2);
 });
 
-it('hides banned contacts from clerk search but not from admins', function () {
+it('shows banned contacts in clerk search and admin search', function () {
     Contact::factory()->create([
         'team_id' => $this->user->current_team_id,
         'name'    => 'Blocked Person',
@@ -101,15 +101,12 @@ it('hides banned contacts from clerk search but not from admins', function () {
         'status'  => 'banned',
     ]);
 
-    $clerk = \App\Models\User::factory()->create([
-        'role' => \App\Support\Roles::CLERK,
-        'current_team_id' => $this->user->current_team_id,
-    ])->fresh();
+    $clerk = makeClerkOnTeam($this->user->current_team_id);
 
-    // Clerk: number search and autocomplete both come back empty.
+    // Clerk: banned contacts are visible and clearly marked.
     $this->actingAs($clerk);
-    $this->get('/contacts?number=9503466923')->assertOk()->assertDontSee('Blocked Person');
-    expect($this->getJson('/contacts/autocomplete?q=9503466923')->json())->toHaveCount(0);
+    $this->get('/contacts?number=9503466923')->assertOk()->assertSee('Blocked Person')->assertSee('BANNED');
+    expect($this->getJson('/contacts/autocomplete?q=9503466923')->json())->toHaveCount(1);
 
     // Admin still finds the banned contact to manage the blacklist.
     $this->actingAs($this->user);
