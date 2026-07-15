@@ -66,17 +66,11 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
     }
 
-    // Every role including Clerks can add notes; clerks can edit their own, Manager+ can edit all.
+    // Every role including Clerks can add notes; only Manager+ can edit/delete a contact
+    // (which also gates deleting someone else's note — see destroyNote()).
     public function addNote(User $user, Contact $contact): bool
     {
         return $contact->team_id === $user->current_team_id;
-    }
-
-    // Clerks can edit their own notes; Manager+ can edit any note.
-    public function editNote(User $user, \App\Models\ContactNote $note): bool
-    {
-        return $note->contact->team_id === $user->current_team_id
-            && ($note->user_id === $user->id || $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER));
     }
 
     public function rate(User $user, Contact $contact): bool
