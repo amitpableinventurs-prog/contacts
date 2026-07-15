@@ -87,6 +87,12 @@ class AppServiceProvider extends ServiceProvider
             $user->current_team_id !== null
         );
 
+        // Clerks can edit their own notes; Manager+ can edit any note.
+        Gate::define('editNote', function (User $user, \App\Models\ContactNote $note) {
+            return $note->contact->team_id === $user->current_team_id
+                && ($note->user_id === $user->id || $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER));
+        });
+
         // ── Modules for Manager and above ─────────────────────────────────
         $managerPlus = fn (User $user) =>
             $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
