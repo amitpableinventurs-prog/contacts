@@ -321,7 +321,18 @@
                             {{-- Add note form --}}
                             @can('addNote', $contact)
                             <x-ui.card>
-                                <x-ui.card-header><x-ui.card-title>Add note</x-ui.card-title></x-ui.card-header>
+                                <x-ui.card-header>
+                                    <x-ui.card-title>
+                                        @if (auth()->user()->isClerk())
+                                            Add or edit your notes
+                                        @else
+                                            Add note
+                                        @endif
+                                    </x-ui.card-title>
+                                    @if (auth()->user()->isClerk())
+                                        <x-ui.card-description>You can add notes and edit your own notes to track interactions and observations.</x-ui.card-description>
+                                    @endif
+                                </x-ui.card-header>
                                 <x-ui.card-content>
                                     <form method="POST" action="{{ route('contacts.notes.store', $contact) }}" class="space-y-3">
                                         @csrf
