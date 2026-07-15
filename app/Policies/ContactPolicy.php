@@ -66,8 +66,8 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
     }
 
-    // Every role including Clerks can add notes; only Manager+ can edit/delete a contact
-    // (which also gates deleting someone else's note — see destroyNote()).
+    // Every role including Clerks can add notes; only Manager+ can delete a contact's note
+    // (see destroyNote()); editing an existing note is scoped by ContactNotePolicy::editNote().
     public function addNote(User $user, Contact $contact): bool
     {
         return $contact->team_id === $user->current_team_id;
