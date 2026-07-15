@@ -32,12 +32,18 @@
         {{-- Header --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Contacts</h1>
+                <h1 class="text-2xl font-semibold tracking-tight">
+                    @if ($isClerk)
+                        Your Contacts
+                    @else
+                        All Contacts
+                    @endif
+                </h1>
                 @if ($isClerk)
-                    <p class="text-sm text-muted-foreground">Search contacts by phone number.</p>
+                    <p class="text-sm text-muted-foreground">Search by phone number to find contacts, add notes, and log interactions.</p>
                 @else
                     <p class="text-sm text-muted-foreground">
-                        {{ $contacts->total() }} {{ \Illuminate\Support\Str::plural('contact', $contacts->total()) }} in this workspace
+                        {{ $contacts->total() }} {{ \Illuminate\Support\Str::plural('contact', $contacts->total()) }} in this workspace · <a href="{{ route('contacts.index') }}" class="text-primary hover:underline">View all</a>
                     </p>
                 @endif
             </div>
