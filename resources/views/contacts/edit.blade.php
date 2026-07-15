@@ -15,6 +15,19 @@
                 <a href="{{ route('contacts.show', $contact) }}">
                     <x-ui.button variant="outline" size="sm">View contact</x-ui.button>
                 </a>
+                @can('banOrReactivate', $contact)
+                    @if ($contact->status !== 'active')
+                        <form method="POST" action="{{ route('contacts.reactivate', $contact) }}" class="inline">
+                            @csrf
+                            <x-ui.button type="submit" variant="outline" size="sm" class="text-green-600 border-green-600 hover:bg-green-50">Reactivate</x-ui.button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('contacts.ban', $contact) }}" class="inline">
+                            @csrf
+                            <x-ui.button type="submit" variant="outline" size="sm" class="text-red-900 border-red-900 hover:bg-red-50">Ban</x-ui.button>
+                        </form>
+                    @endif
+                @endcan
                 @can('manage', $contact)
                     <x-ui.dropdown-menu align="end">
                         <x-slot:trigger>
@@ -26,18 +39,6 @@
                             <form method="POST" action="{{ route('contacts.suspend', $contact) }}">
                                 @csrf
                                 <x-ui.dropdown-menu-item as="button" type="submit" class="text-orange-600">Suspend</x-ui.dropdown-menu-item>
-                            </form>
-                        @endif
-                        @if ($contact->status !== 'banned')
-                            <form method="POST" action="{{ route('contacts.ban', $contact) }}">
-                                @csrf
-                                <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-700">Ban</x-ui.dropdown-menu-item>
-                            </form>
-                        @endif
-                        @if ($contact->status !== 'active')
-                            <form method="POST" action="{{ route('contacts.reactivate', $contact) }}">
-                                @csrf
-                                <x-ui.dropdown-menu-item as="button" type="submit">Reactivate</x-ui.dropdown-menu-item>
                             </form>
                         @endif
                     </x-ui.dropdown-menu>

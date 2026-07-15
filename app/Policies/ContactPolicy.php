@@ -40,6 +40,12 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
+    // All roles including Clerks can ban/reactivate contacts.
+    public function banOrReactivate(User $user, Contact $contact): bool
+    {
+        return $contact->team_id === $user->current_team_id;
+    }
+
     // Manager and above can delete/trash contacts. Clerks cannot.
     public function delete(User $user, Contact $contact): bool
     {
