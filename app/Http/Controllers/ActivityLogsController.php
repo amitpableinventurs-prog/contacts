@@ -105,17 +105,25 @@ class ActivityLogsController extends Controller
         }, 'activity-logs-'.now()->format('Y-m-d').'.csv', ['Content-Type' => 'text/csv']);
     }
 
-    /** Super Admin only: delete the selected log entries. */
+    /**
+     * Delete the selected log entries. Super Admin can delete any log;
+     * Admin can only delete Manager/Clerk logs (matching their view scope).
+     * Manager has no delete access — read-only per the role spec.
+     */
     public function destroySelected(Request $request): RedirectResponse
     {
-        abort_unless(Auth::user()->isSuperAdmin(), 403, 'Only Super Admin can delete logs.');
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403, 'Only Admin and above can delete logs.');
 
         $data = $request->validate([
             'log_ids'   => ['required', 'array', 'min:1'],
             'log_ids.*' => ['integer'],
         ]);
 
-        $count = ActivityLog::whereIn('id', $data['log_ids'])->delete();
+        $query = ActivityLog::whereIn('id', $data['log_ids']);
+        if (! Auth::user()->isSuperAdmin()) {
+            $query->whereIn('user_id', User::whereIn('role', [Roles::CLERK, Roles::MANAGER])->pluck('id'));
+        }
+        $count = $query->delete();
 
         return back()->with('toast', ['type' => 'success', 'message' => "{$count} log ".\Illuminate\Support\Str::plural('entry', $count).' deleted.']);
     }

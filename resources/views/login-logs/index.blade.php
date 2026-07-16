@@ -46,11 +46,34 @@
             </x-ui.card-content>
         </x-ui.card>
 
+        @php $canDeleteLogs = auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN); @endphp
+
+        <form method="POST" action="{{ route('login-logs.delete') }}"
+              onsubmit="return confirm('Delete selected log entries? This cannot be undone.')"
+              x-data="{ checked: 0 }"
+              @change="checked = $el.querySelectorAll('input[data-log-cb]:checked').length"
+              class="space-y-4">
+            @csrf
+
+            @if ($canDeleteLogs)
+                <div class="flex justify-end">
+                    <x-ui.button type="submit" variant="destructive" size="sm" x-show="checked > 0" x-cloak>
+                        Delete selected (<span x-text="checked"></span>)
+                    </x-ui.button>
+                </div>
+            @endif
+
         {{-- Table --}}
         <x-ui.card class="overflow-hidden">
             <x-ui.table>
                 <x-ui.table-header>
                     <x-ui.table-row class="hover:bg-transparent">
+                        @if ($canDeleteLogs)
+                            <x-ui.table-head class="w-10">
+                                <input type="checkbox" class="rounded border-input"
+                                       @change="document.querySelectorAll('input[data-log-cb]').forEach(cb => cb.checked = $event.target.checked); checked = $event.target.checked ? document.querySelectorAll('input[data-log-cb]').length : 0" />
+                            </x-ui.table-head>
+                        @endif
                         <x-ui.table-head>User</x-ui.table-head>
                         <x-ui.table-head class="hidden md:table-cell">IP Address</x-ui.table-head>
                         <x-ui.table-head class="hidden lg:table-cell">Browser</x-ui.table-head>
@@ -64,6 +87,11 @@
                 <x-ui.table-body>
                     @forelse ($logs as $log)
                         <x-ui.table-row>
+                            @if ($canDeleteLogs)
+                                <x-ui.table-cell>
+                                    <input type="checkbox" data-log-cb name="log_ids[]" value="{{ $log->id }}" class="rounded border-input" />
+                                </x-ui.table-cell>
+                            @endif
                             <x-ui.table-cell>
                                 <div class="font-medium text-sm">{{ $log->user?->name ?? '—' }}</div>
                                 <div class="text-xs text-muted-foreground">{{ $log->user?->email }}</div>
@@ -116,7 +144,7 @@
                         </x-ui.table-row>
                     @empty
                         <x-ui.table-row>
-                            <x-ui.table-cell colspan="8" class="text-center py-12 text-muted-foreground">
+                            <x-ui.table-cell colspan="{{ $canDeleteLogs ? 9 : 8 }}" class="text-center py-12 text-muted-foreground">
                                 No login records found.
                             </x-ui.table-cell>
                         </x-ui.table-row>
@@ -128,5 +156,6 @@
                 <div class="border-t p-3">{{ $logs->links() }}</div>
             @endif
         </x-ui.card>
+        </form>
     </div>
 </x-app-layout>

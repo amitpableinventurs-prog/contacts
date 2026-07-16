@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\IpLoginLog;
 use App\Models\User;
 use App\Support\Roles;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -55,5 +56,27 @@ class LoginLogsController extends Controller
         $isAdminPlus = $seesAll; // controls the "scoped view" banner
 
         return view('login-logs.index', compact('logs', 'users', 'isAdminPlus'));
+    }
+
+    /**
+     * Delete the selected login log entries. Super Admin can delete any;
+     * Admin can only delete Manager/Clerk logs. Manager has no delete access.
+     */
+    public function destroySelected(Request $request): RedirectResponse
+    {
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403, 'Only Admin and above can delete logs.');
+
+        $data = $request->validate([
+            'log_ids'   => ['required', 'array', 'min:1'],
+            'log_ids.*' => ['integer'],
+        ]);
+
+        $query = IpLoginLog::whereIn('id', $data['log_ids']);
+        if (! Auth::user()->isSuperAdmin()) {
+            $query->whereIn('user_id', User::whereIn('role', [Roles::CLERK, Roles::MANAGER])->pluck('id'));
+        }
+        $count = $query->delete();
+
+        return back()->with('toast', ['type' => 'success', 'message' => "{$count} log ".\Illuminate\Support\Str::plural('entry', $count).' deleted.']);
     }
 }

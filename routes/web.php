@@ -13,12 +13,14 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailsController;
 use App\Http\Controllers\GroupsController;
 use App\Http\Controllers\ImportsController;
+use App\Http\Controllers\InboxController;
 use App\Http\Controllers\InstallerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RemindersController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SmsController;
 use App\Http\Controllers\TagsController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TrackingController;
 use App\Http\Controllers\TwoFactorController;
 use App\Http\Controllers\Webhooks\TwilioWebhookController;
@@ -69,6 +71,21 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
 
     // -------------------------------------------------------------------------
+    // Team (Manager: their Clerks; Admin: every Manager + Clerk)
+    // -------------------------------------------------------------------------
+    Route::get('/team', [TeamController::class, 'index'])->name('team.index');
+    Route::get('/team/{user}/searches', [TeamController::class, 'searchHistory'])->name('team.search-history');
+
+    // -------------------------------------------------------------------------
+    // Inbox (internal messaging between users of any role)
+    // -------------------------------------------------------------------------
+    Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
+    Route::get('/inbox/compose', [InboxController::class, 'create'])->name('inbox.create');
+    Route::post('/inbox', [InboxController::class, 'store'])->name('inbox.store');
+    Route::get('/inbox/{message}', [InboxController::class, 'show'])->name('inbox.show');
+    Route::delete('/inbox/{message}', [InboxController::class, 'destroy'])->name('inbox.destroy');
+
+    // -------------------------------------------------------------------------
     // Contacts
     // -------------------------------------------------------------------------
     Route::get('/contacts', [ContactsController::class, 'index'])->name('contacts.index');
@@ -79,6 +96,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/contacts/pending', [ContactsController::class, 'pending'])->name('contacts.pending');
     Route::post('/contacts/{contact}/approve', [ContactsController::class, 'approve'])->name('contacts.approve');
     Route::post('/contacts/{contact}/reject', [ContactsController::class, 'reject'])->name('contacts.reject');
+    Route::post('/contact-edits/{editRequest}/approve', [ContactsController::class, 'approveEdit'])->name('contact-edits.approve');
+    Route::post('/contact-edits/{editRequest}/reject', [ContactsController::class, 'rejectEdit'])->name('contact-edits.reject');
     Route::post('/contacts/enrich', [ContactsController::class, 'enrich'])->name('contacts.enrich');
     Route::post('/contacts/bulk', [ContactsController::class, 'bulk'])->name('contacts.bulk');
     Route::post('/contacts', [ContactsController::class, 'store'])->name('contacts.store');
@@ -184,6 +203,7 @@ Route::middleware(['auth'])->group(function () {
     // IP Login logs
     // -------------------------------------------------------------------------
     Route::get('/login-logs', [LoginLogsController::class, 'index'])->name('login-logs.index');  // gate: view-login-logs
+    Route::post('/login-logs/delete', [LoginLogsController::class, 'destroySelected'])->name('login-logs.delete');
 
     // -------------------------------------------------------------------------
     // Profile

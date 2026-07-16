@@ -15,19 +15,21 @@
                 <a href="{{ route('contacts.show', $contact) }}">
                     <x-ui.button variant="outline" size="sm">View contact</x-ui.button>
                 </a>
-                @can('banOrReactivate', $contact)
-                    @if ($contact->status !== 'active')
+                @if (in_array($contact->status, ['banned', 'suspended'], true))
+                    @can('reactivate', $contact)
                         <form method="POST" action="{{ route('contacts.reactivate', $contact) }}" class="inline">
                             @csrf
                             <x-ui.button type="submit" variant="outline" size="sm" class="text-green-600 border-green-600 hover:bg-green-50">Reactivate</x-ui.button>
                         </form>
-                    @else
+                    @endcan
+                @else
+                    @can('manage', $contact)
                         <form method="POST" action="{{ route('contacts.ban', $contact) }}" class="inline">
                             @csrf
                             <x-ui.button type="submit" variant="outline" size="sm" class="text-red-900 border-red-900 hover:bg-red-50">Ban</x-ui.button>
                         </form>
-                    @endif
-                @endcan
+                    @endcan
+                @endif
                 @can('manage', $contact)
                     <x-ui.dropdown-menu align="end">
                         <x-slot:trigger>
@@ -52,6 +54,12 @@
             $userRole = Auth::user()->role;
         @endphp
 
+        @error('edit')
+            <div class="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {{ $message }}
+            </div>
+        @enderror
+
         @if (!$canEdit)
             <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <strong>View-only mode:</strong>
@@ -59,6 +67,25 @@
                     As a Clerk, you can edit and save the Quick notes field, but cannot edit other contact fields. Only Managers and above can modify contact details.
                 @else
                     This contact is in read-only mode. Only authorized users can edit these fields.
+                @endif
+            </div>
+        @elseif ($userRole === 'manager')
+            <div class="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                As a Manager, changes you save here are held for approval — an Admin or Super Admin needs to
+                approve them before they take effect.
+            </div>
+        @endif
+
+        @if ($pendingEdit)
+            <div class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                @if ($pendingEdit->requested_by === Auth::id())
+                    Your edit submitted {{ $pendingEdit->created_at->diffForHumans() }} is still awaiting approval.
+                @elseif (Auth::user()->can('approve-edits'))
+                    <strong>{{ $pendingEdit->requestedBy?->name ?? 'Someone' }}</strong> proposed changes
+                    {{ $pendingEdit->created_at->diffForHumans() }} that are awaiting your review —
+                    <a href="{{ route('contacts.pending') }}" class="underline font-medium">view pending approvals</a>.
+                @else
+                    An edit to this contact is awaiting approval.
                 @endif
             </div>
         @endif

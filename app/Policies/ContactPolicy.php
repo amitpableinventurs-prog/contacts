@@ -41,17 +41,20 @@ class ContactPolicy
             && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
     }
 
-    // All roles including Clerks can ban/reactivate contacts.
-    public function banOrReactivate(User $user, Contact $contact): bool
+    // Only Admin and above can reactivate (undo a ban/suspension). Manager can
+    // ban/suspend via manage() but cannot reverse it — see reactivate() in the
+    // controller, which uses this ability instead of manage().
+    public function reactivate(User $user, Contact $contact): bool
     {
-        return $contact->team_id === $user->current_team_id;
+        return $contact->team_id === $user->current_team_id
+            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
     }
 
-    // Manager and above can delete/trash contacts. Clerks cannot.
+    // Admin and above can delete/trash contacts. Manager can view but not delete.
     public function delete(User $user, Contact $contact): bool
     {
         return $contact->team_id === $user->current_team_id
-            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER);
+            && $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
     }
 
     public function restore(User $user, Contact $contact): bool

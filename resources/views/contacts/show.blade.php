@@ -91,15 +91,17 @@
                                 <x-ui.dropdown-menu-item as="button" type="submit" class="text-red-700">Ban</x-ui.dropdown-menu-item>
                             </form>
                         @endif
-                        @if ($contact->status !== 'active')
+                    @endcan
+                    @can('reactivate', $contact)
+                        @if (in_array($contact->status, ['banned', 'suspended'], true))
                             <form method="POST" action="{{ route('contacts.reactivate', $contact) }}">
                                 @csrf
                                 <x-ui.dropdown-menu-item as="button" type="submit">Reactivate</x-ui.dropdown-menu-item>
                             </form>
                         @endif
-                        <x-ui.dropdown-menu-separator />
                     @endcan
                     @can('delete', $contact)
+                        <x-ui.dropdown-menu-separator />
                         <form method="POST" action="{{ route('contacts.destroy', $contact) }}" onsubmit="return confirm('Move {{ addslashes($contact->name) }} to trash?')">
                             @csrf @method('DELETE')
                             <x-ui.dropdown-menu-item as="button" type="submit" destructive>🗑 Move to trash</x-ui.dropdown-menu-item>

@@ -95,6 +95,10 @@ class UsersController extends Controller
             'search_quota' => ['nullable', 'integer', 'min:0'],
         ]);
 
+        if ($data['role'] === Roles::SUPER_ADMIN && User::where('role', Roles::SUPER_ADMIN)->exists()) {
+            return back()->withInput()->withErrors(['role' => 'A Super Admin already exists — only one is allowed.']);
+        }
+
         $user = User::create([
             'name'         => $data['name'],
             'email'        => $data['email'],
@@ -140,6 +144,11 @@ class UsersController extends Controller
             'search_quota' => ['nullable', 'integer', 'min:0'],
             'reset_searches' => ['nullable', 'boolean'],
         ]);
+
+        if ($data['role'] === Roles::SUPER_ADMIN && $user->role !== Roles::SUPER_ADMIN
+            && User::where('role', Roles::SUPER_ADMIN)->exists()) {
+            return back()->withInput()->withErrors(['role' => 'A Super Admin already exists — only one is allowed.']);
+        }
 
         $updateData = [
             'name'         => $data['name'],

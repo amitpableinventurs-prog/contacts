@@ -105,15 +105,20 @@ class AppServiceProvider extends ServiceProvider
         // Manager can approve/reject contacts submitted by Clerks.
         Gate::define('approve-contacts', $managerPlus);
 
-        // ── Import / Export — Super Admin + Admin + Manager ────────────────
-        // Managers can import with full overwrite (they already have
-        // contacts.update + manage-tags). Clerks have search-only access:
-        // no import (adds contacts) and no export (dumps the full list).
+        // Only Admin and above can approve/reject a Manager's proposed edit
+        // to an existing contact (see ContactsController::update()/approveEdit()).
+        Gate::define('approve-edits', fn (User $user) =>
+            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN)
+        );
+
+        // ── Import / Export — Super Admin only ──────────────────────────────
+        // Admin keeps select-and-delete on contacts but not bulk-by-count,
+        // import, or export; only Super Admin has all three (PIN-protected).
         Gate::define('manage-imports', fn (User $user) =>
-            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER)
+            $user->isSuperAdmin()
         );
         Gate::define('manage-export', fn (User $user) =>
-            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN, Roles::MANAGER)
+            $user->isSuperAdmin()
         );
 
         // ── Audit / Activity logs ──────────────────────────────────────────

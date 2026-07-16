@@ -81,28 +81,28 @@
             <x-ui.card-content class="p-4">
                 <form method="GET" action="{{ route('contacts.index') }}">
                     <div class="flex flex-wrap items-center gap-2">
-                        @unless ($isClerk)
+                        @if ($hasAdvancedSearch ?? false)
                             <div class="flex-1 min-w-[160px]">
                                 <div class="relative">
                                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/></svg>
                                     <x-ui.input name="q" value="{{ request('q') }}" placeholder="Name, email, company, city…" class="pl-9" />
                                 </div>
                             </div>
-                        @endunless
-                        <div class="{{ $isClerk ? 'w-full sm:w-72' : 'w-full sm:w-44' }}">
+                        @endif
+                        <div class="{{ ($hasAdvancedSearch ?? false) ? 'w-full sm:w-44' : 'w-full sm:w-72' }}">
                             <div class="relative">
                                 <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
                                 <x-ui.input name="number" value="{{ request('number') }}" placeholder="Phone number…" class="pl-9" />
                             </div>
                         </div>
-                        @unless ($isClerk)
+                        @if ($hasAdvancedSearch ?? false)
                             <select name="group_id" class="flex h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
                                 <option value="">All groups</option>
                                 @foreach ($groups as $group)
                                     <option value="{{ $group->id }}" @selected(request('group_id') == $group->id)>{{ $group->name }}</option>
                                 @endforeach
                             </select>
-                        @endunless
+                        @endif
                         <x-ui.button type="submit" variant="secondary">Search</x-ui.button>
                         @if (request()->hasAny(['q','number','group_id','tags']))
                             <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground">Clear</a>
@@ -198,30 +198,36 @@
                 </a>
             @endif
 
-            {{-- Trash (soft delete) — all roles --}}
-            <form method="POST" action="{{ route('contacts.bulk') }}" class="flex gap-2">
-                @csrf
-                <input type="hidden" name="action" value="delete" />
-                <template x-for="id in selected" :key="id">
-                    <input type="hidden" name="contact_ids[]" :value="id" />
-                </template>
-                <x-ui.button type="button" variant="ghost" size="sm" @click="selected = []">Cancel</x-ui.button>
-                <x-ui.button type="submit" variant="destructive" size="sm" onclick="return confirm('Move selected contacts to trash?')">
-                    🗑 Move to trash
-                </x-ui.button>
-            </form>
+            <x-ui.button type="button" variant="ghost" size="sm" @click="selected = []">Cancel</x-ui.button>
+
+            {{-- Trash (soft delete) — Admin and above only; Manager can no longer delete contacts --}}
+            @if (auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN))
+                <form method="POST" action="{{ route('contacts.bulk') }}" class="flex gap-2"
+                      onsubmit="return confirmDeleteWithPin(this, 'Move selected contacts to trash?')">
+                    @csrf
+                    <input type="hidden" name="action" value="delete" />
+                    <input type="hidden" name="pin" value="" />
+                    <template x-for="id in selected" :key="id">
+                        <input type="hidden" name="contact_ids[]" :value="id" />
+                    </template>
+                    <x-ui.button type="submit" variant="destructive" size="sm">
+                        🗑 Move to trash
+                    </x-ui.button>
+                </form>
+            @endif
         </div>
 
-        {{-- Bulk delete by count (Admin / Manager only) --}}
-        @if (!auth()->user()->isClerk())
+        {{-- Bulk delete by count — Super Admin only, PIN-protected --}}
+        @if (auth()->user()->isSuperAdmin())
             <div class="flex flex-wrap items-center gap-2">
                 <span class="text-sm text-muted-foreground">Bulk delete:</span>
                 @foreach ([500, 1000, 3000, 5000] as $count)
                     <form method="POST" action="{{ route('contacts.bulk') }}"
-                          onsubmit="return confirm('Move {{ $count }} contacts to trash? This cannot be undone easily.')">
+                          onsubmit="return confirmDeleteWithPin(this, 'Move {{ $count }} contacts to trash? This cannot be undone easily.')">
                         @csrf
                         <input type="hidden" name="action" value="delete_count" />
                         <input type="hidden" name="bulk_count" value="{{ $count }}" />
+                        <input type="hidden" name="pin" value="" />
                         <x-ui.button type="submit" variant="outline" size="sm">
                             🗑 {{ number_format($count) }}
                         </x-ui.button>
@@ -420,9 +426,10 @@
                                         @endcan
                                         @can('delete', $contact)
                                             <x-ui.dropdown-menu-separator />
-                                            <form method="POST" action="{{ route('contacts.destroy', $contact) }}" onsubmit="return confirm('Move {{ addslashes($contact->name) }} to trash?')">
+                                            <form method="POST" action="{{ route('contacts.destroy', $contact) }}" onsubmit="return confirmDeleteWithPin(this, 'Move {{ addslashes($contact->name) }} to trash?')">
                                                 @csrf
                                                 @method('DELETE')
+                                                <input type="hidden" name="pin" value="" />
                                                 <x-ui.dropdown-menu-item as="button" type="submit" destructive>Move to trash</x-ui.dropdown-menu-item>
                                             </form>
                                         @endcan
@@ -448,4 +455,21 @@
             </div>
         @endif
     </div>
+
+    @if (auth()->user()->isSuperAdmin())
+        @push('scripts')
+        <script>
+            // Super Admin's delete actions (single, select, and bulk-by-count) require the
+            // export/import PIN — validated again server-side, this just avoids a round trip.
+            function confirmDeleteWithPin(form, message) {
+                if (!confirm(message)) return false;
+                const pin = prompt('Enter PIN to confirm deletion:');
+                if (!pin) return false;
+                form.querySelector('input[name="pin"]').value = pin;
+                return true;
+            }
+        </script>
+        @endpush
+    @endif
 </x-app-layout>
+

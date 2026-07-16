@@ -4,13 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Contact;
 use App\Models\ContactEditHistory;
+use App\Models\ContactEditRequest;
 use App\Models\ContactFile;
 use App\Models\ContactGalleryImage;
 use App\Models\ContactNote;
 use App\Models\Group;
+use App\Models\SearchLog;
 use App\Models\Tag;
+use App\Models\User;
 use App\Services\AnthropicClient;
 use App\Support\ActivityLogger;
+use App\Support\Roles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,6 +57,23 @@ class ContactsController extends Controller
         session(['clerk_recent_searches' => array_slice($recent, 0, 5)]);
     }
 
+    /**
+     * Persist a Clerk/Manager search so Admin/Super Admin can see search
+     * count and history per user (Team pages). Also bumps the running
+     * per-user counter used to display "search count" at a glance.
+     */
+    private function logSearch(User $user, string $query, int $resultsCount): void
+    {
+        SearchLog::create([
+            'user_id'       => $user->id,
+            'team_id'       => $user->current_team_id,
+            'query'         => $query,
+            'results_count' => $resultsCount,
+        ]);
+
+        $user->increment('searches_used');
+    }
+
     // ------------------------------------------------------------------
     // List
     // ------------------------------------------------------------------
@@ -64,6 +85,11 @@ class ContactsController extends Controller
         $user    = Auth::user();
         $teamId  = $user->current_team_id;
         $isClerk = $user->isClerk();
+        // Manager lost the advanced filters (free-text/group/tags) and is
+        // limited to the same phone-number search as Clerk; only Admin+
+        // keeps the full filter bar. Manager still browses/paginates the
+        // full list, unlike Clerk (see $clerkSearched below).
+        $hasAdvancedSearch = $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
 
         $perPage = 25;
 
@@ -77,9 +103,8 @@ class ContactsController extends Controller
             $number = '';
         }
 
-        // Clerks only get a basic phone-number search: no free-text search,
-        // no group/tag filters, and no browsable list without a number.
-        if (! $isClerk) {
+        // Only Admin+ gets free-text search plus group/tag filters.
+        if ($hasAdvancedSearch) {
             if ($q = trim((string) $request->input('q'))) {
                 $query->where(function ($sub) use ($q) {
                     $sub->where('name',    'like', "%{$q}%")
@@ -113,8 +138,8 @@ class ContactsController extends Controller
         });
 
         $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
-        $groups       = $isClerk ? collect() : Group::where('team_id', $teamId)->orderBy('name')->get();
-        $tags         = $isClerk ? collect() : Tag::where('team_id', $teamId)->orderBy('name')->get();
+        $groups       = $hasAdvancedSearch ? Group::where('team_id', $teamId)->orderBy('name')->get() : collect();
+        $tags         = $hasAdvancedSearch ? Tag::where('team_id', $teamId)->orderBy('name')->get() : collect();
         $pendingCount = $isClerk ? 0 : Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count();
         $clerkSearched = ! $isClerk || $number !== '';
 
@@ -122,7 +147,13 @@ class ContactsController extends Controller
             $this->rememberClerkSearch($number, $contacts->first());
         }
 
-        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user', 'clerkSearched'));
+        // Persist search count/history for Clerk and Manager so Admin/Super Admin
+        // can review it later (see Team pages / logSearch()).
+        if (($isClerk || $user->isManager()) && $number !== '') {
+            $this->logSearch($user, $number, $contacts->total());
+        }
+
+        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user', 'clerkSearched', 'hasAdvancedSearch'));
     }
 
     // ------------------------------------------------------------------
@@ -264,7 +295,9 @@ class ContactsController extends Controller
         $tags   = Tag::where('team_id', $teamId)->orderBy('name')->get();
         $contact->load('tags');
 
-        return view('contacts.edit', compact('contact', 'groups', 'tags'));
+        $pendingEdit = $contact->editRequests()->where('status', 'pending')->latest()->first();
+
+        return view('contacts.edit', compact('contact', 'groups', 'tags', 'pendingEdit'));
     }
 
     public function update(Request $request, Contact $contact): RedirectResponse
@@ -282,6 +315,12 @@ class ContactsController extends Controller
         }
 
         $data = $this->validateContact($request);
+
+        // Manager can fill out the full edit form, but the changes are held
+        // for Admin/Super Admin approval rather than applied immediately.
+        if (! Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN)) {
+            return $this->queueEditRequest($request, $contact, $data);
+        }
 
         // Track which fields changed for edit history.
         $trackFields = ['name','email','phone','company','job_title','website','address','city','notes'];
@@ -308,24 +347,7 @@ class ContactsController extends Controller
         $this->handlePhoto($request, $contact);
         $contact->tags()->sync($request->input('tags', []));
 
-        // Save edit history and prune to last 5 entries.
-        if (! empty($changed)) {
-            try {
-                ContactEditHistory::create([
-                    'contact_id'     => $contact->id,
-                    'user_id'        => Auth::id(),
-                    'changed_fields' => $changed,
-                ]);
-                $oldIds = ContactEditHistory::where('contact_id', $contact->id)
-                    ->orderByDesc('created_at')
-                    ->skip(5)->pluck('id');
-                if ($oldIds->isNotEmpty()) {
-                    ContactEditHistory::whereIn('id', $oldIds)->delete();
-                }
-            } catch (\Throwable) {
-                // Never crash the save because of edit-history logging.
-            }
-        }
+        $this->recordEditHistory($contact, Auth::id(), $changed);
 
         ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name]);
 
@@ -333,13 +355,92 @@ class ContactsController extends Controller
             ->with('toast', ['type' => 'success', 'message' => 'Contact updated.']);
     }
 
+    /**
+     * Manager proposes changes to an existing contact; nothing is applied to
+     * the contact until an Admin/Super Admin approves via approveEdit().
+     */
+    private function queueEditRequest(Request $request, Contact $contact, array $data): RedirectResponse
+    {
+        if ($contact->editRequests()->where('status', 'pending')->exists()) {
+            return back()->withInput()->withErrors(['edit' => 'This contact already has an edit awaiting approval.']);
+        }
+
+        $changes  = [];
+        $original = [];
+        foreach ($data as $field => $value) {
+            $old = $contact->$field;
+            if ((string) ($old ?? '') !== (string) ($value ?? '')) {
+                $changes[$field]  = is_string($value) ? $this->safeUtf8($value) : $value;
+                $original[$field] = $old;
+            }
+        }
+
+        $newTagIds = collect($request->input('tags', []))->map(fn ($id) => (int) $id)->sort()->values()->all();
+        $currentTagIds = $contact->tags()->pluck('tags.id')->sort()->values()->all();
+        $tagsChanged = $newTagIds !== $currentTagIds;
+
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('pending-edits', 'local');
+        }
+
+        if (empty($changes) && ! $tagsChanged && ! $photoPath) {
+            return redirect()->route('contacts.show', $contact)
+                ->with('toast', ['type' => 'info', 'message' => 'No changes to submit.']);
+        }
+
+        ContactEditRequest::create([
+            'contact_id'   => $contact->id,
+            'team_id'      => $contact->team_id,
+            'requested_by' => Auth::id(),
+            'status'       => 'pending',
+            'changes'      => $changes,
+            'original'     => $original,
+            'tags'         => $tagsChanged ? $newTagIds : null,
+            'photo_path'   => $photoPath,
+        ]);
+
+        ActivityLogger::log('contact.edit_requested', $contact, ['name' => $contact->name]);
+
+        return redirect()->route('contacts.show', $contact)
+            ->with('toast', ['type' => 'success', 'message' => 'Your changes have been submitted for approval.']);
+    }
+
+    /** Save an edit-history entry and prune to the last 5 per contact. Never fatal. */
+    private function recordEditHistory(Contact $contact, int $userId, array $changed): void
+    {
+        if (empty($changed)) {
+            return;
+        }
+
+        try {
+            ContactEditHistory::create([
+                'contact_id'     => $contact->id,
+                'user_id'        => $userId,
+                'changed_fields' => $changed,
+            ]);
+            $oldIds = ContactEditHistory::where('contact_id', $contact->id)
+                ->orderByDesc('created_at')
+                ->skip(5)->pluck('id');
+            if ($oldIds->isNotEmpty()) {
+                ContactEditHistory::whereIn('id', $oldIds)->delete();
+            }
+        } catch (\Throwable) {
+            // Never crash the save because of edit-history logging.
+        }
+    }
+
     // ------------------------------------------------------------------
     // Delete
     // ------------------------------------------------------------------
 
-    public function destroy(Contact $contact): RedirectResponse
+    public function destroy(Request $request, Contact $contact): RedirectResponse
     {
         Gate::authorize('delete', $contact);
+
+        if (Auth::user()->isSuperAdmin() && (string) $request->input('pin') !== (string) env('EXPORT_PIN')) {
+            return back()->withErrors(['pin' => 'Incorrect PIN.']);
+        }
 
         $name = $contact->name;
         ActivityLogger::log('contact.trashed', $contact, ['name' => $name]);
@@ -369,7 +470,8 @@ class ContactsController extends Controller
 
     public function reactivate(Contact $contact): RedirectResponse
     {
-        Gate::authorize('manage', $contact);
+        // Manager can ban/suspend (manage()) but only Admin+ can undo it.
+        Gate::authorize('reactivate', $contact);
         $contact->update(['status' => 'active']);
         return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} reactivated."]);
     }
@@ -388,9 +490,17 @@ class ContactsController extends Controller
             )
             ->with(['owner', 'group', 'tags'])
             ->latest()
-            ->paginate(25);
+            ->paginate(25, ['*'], 'contacts_page');
 
-        return view('contacts.pending', compact('contacts'));
+        $editRequests = ContactEditRequest::where('status', 'pending')
+            ->when(! Auth::user()->isSuperAdmin(), fn ($q) =>
+                $q->where('team_id', Auth::user()->current_team_id)
+            )
+            ->with(['contact', 'requestedBy'])
+            ->latest()
+            ->paginate(25, ['*'], 'edits_page');
+
+        return view('contacts.pending', compact('contacts', 'editRequests'));
     }
 
     public function approve(Contact $contact): RedirectResponse
@@ -418,6 +528,63 @@ class ContactsController extends Controller
         ActivityLogger::log('contact.rejected', $contact, ['name' => $contact->name]);
 
         return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} rejected."]);
+    }
+
+    /** Only Admin/Super Admin approve a Manager's proposed edit — see ContactsController::update(). */
+    public function approveEdit(ContactEditRequest $editRequest): RedirectResponse
+    {
+        Gate::authorize('approve-edits');
+
+        $contact = $editRequest->contact;
+        $this->ensureSameTeam($contact);
+        abort_unless($editRequest->status === 'pending', 404);
+
+        $contact->update($editRequest->changes);
+
+        if ($editRequest->tags !== null) {
+            $contact->tags()->sync($editRequest->tags);
+        }
+
+        if ($editRequest->photo_path) {
+            if ($contact->photo) {
+                Storage::disk('public')->delete($contact->photo);
+            }
+            $newPath = "contacts/{$contact->id}/" . basename($editRequest->photo_path);
+            Storage::disk('public')->put($newPath, Storage::disk('local')->get($editRequest->photo_path));
+            Storage::disk('local')->delete($editRequest->photo_path);
+            $contact->update(['photo' => $newPath]);
+        }
+
+        $changed = [];
+        foreach ($editRequest->changes as $field => $to) {
+            $changed[$field] = ['from' => (string) ($editRequest->original[$field] ?? ''), 'to' => (string) $to];
+        }
+        $this->recordEditHistory($contact, $editRequest->requested_by, $changed);
+
+        $editRequest->update(['status' => 'approved', 'reviewed_by' => Auth::id(), 'reviewed_at' => now()]);
+
+        ActivityLogger::log('contact.edit_approved', $contact, ['name' => $contact->name]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => "Edit for {$contact->name} approved."]);
+    }
+
+    public function rejectEdit(ContactEditRequest $editRequest): RedirectResponse
+    {
+        Gate::authorize('approve-edits');
+
+        $contact = $editRequest->contact;
+        $this->ensureSameTeam($contact);
+        abort_unless($editRequest->status === 'pending', 404);
+
+        if ($editRequest->photo_path) {
+            Storage::disk('local')->delete($editRequest->photo_path);
+        }
+
+        $editRequest->update(['status' => 'rejected', 'reviewed_by' => Auth::id(), 'reviewed_at' => now()]);
+
+        ActivityLogger::log('contact.edit_rejected', $contact, ['name' => $contact->name]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => "Edit for {$contact->name} rejected."]);
     }
 
     // ------------------------------------------------------------------
@@ -644,9 +811,22 @@ class ContactsController extends Controller
         $action = $request->input('action');
         $ids    = $request->input('contact_ids', []);
 
-        // Bulk delete by count (500 / 1000 / 3000 / 5000) — no checkbox ids needed.
+        // Manager can no longer delete contacts at all, individually or in bulk.
+        if (in_array($action, ['delete', 'delete_count'], true)
+            && ! Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN)) {
+            abort(403, 'Only Admin and above can delete contacts.');
+        }
+
+        // Bulk delete by count (500 / 1000 / 3000 / 5000) is Super Admin only and
+        // PIN-protected — Admin keeps select-and-delete ('delete' below) but not this.
         if ($action === 'delete_count') {
-            Gate::authorize('viewAny', Contact::class);
+            if (! Auth::user()->isSuperAdmin()) {
+                abort(403, 'Only Super Admin can bulk-delete by count.');
+            }
+            if ((string) $request->input('pin') !== (string) env('EXPORT_PIN')) {
+                return back()->withErrors(['pin' => 'Incorrect PIN.']);
+            }
+
             $count = min((int) $request->input('bulk_count', 500), 5000);
             // Soft-delete with a single UPDATE — no model hydration needed.
             $ids = Contact::where('team_id', $teamId)
@@ -655,6 +835,13 @@ class ContactsController extends Controller
                 ->pluck('id');
             $deleted = $ids->isEmpty() ? 0 : Contact::whereIn('id', $ids)->delete();
             return back()->with('toast', ['type' => 'success', 'message' => "{$deleted} contact(s) moved to trash."]);
+        }
+
+        // Select-and-delete (checkbox selection) is PIN-protected only for Super Admin;
+        // Admin can already only reach this because of the hasRole check above.
+        if ($action === 'delete' && Auth::user()->isSuperAdmin()
+            && (string) $request->input('pin') !== (string) env('EXPORT_PIN')) {
+            return back()->withErrors(['pin' => 'Incorrect PIN.']);
         }
 
         if (empty($ids)) {

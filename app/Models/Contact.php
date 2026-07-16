@@ -118,6 +118,11 @@ class Contact extends Model
         return $this->hasMany(ContactEditHistory::class)->latest()->limit(5);
     }
 
+    public function editRequests(): HasMany
+    {
+        return $this->hasMany(ContactEditRequest::class);
+    }
+
     // Legacy many-to-many via explicit pivot (kept for existing code that may use it)
     public function contactGroups(): BelongsToMany
     {

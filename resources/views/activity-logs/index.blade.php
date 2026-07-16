@@ -51,7 +51,7 @@
             </x-ui.card-content>
         </x-ui.card>
 
-        @php $isSuperAdmin = auth()->user()->isSuperAdmin(); @endphp
+        @php $canDeleteLogs = auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN); @endphp
 
         <form method="POST" action="{{ route('activity-logs.delete') }}"
               onsubmit="return confirm('Delete selected log entries? This cannot be undone.')"
@@ -66,7 +66,7 @@
                     {{ $logs->total() }} {{ \Illuminate\Support\Str::plural('record', $logs->total()) }} found
                 </div>
                 <div class="flex items-center gap-2">
-                    @if ($isSuperAdmin)
+                    @if ($canDeleteLogs)
                         <x-ui.button type="submit" variant="destructive" size="sm" x-show="checked > 0" x-cloak>
                             Delete selected (<span x-text="checked"></span>)
                         </x-ui.button>
@@ -85,7 +85,7 @@
             <x-ui.table>
                 <x-ui.table-header>
                     <x-ui.table-row class="hover:bg-transparent">
-                        @if ($isSuperAdmin)
+                        @if ($canDeleteLogs)
                             <x-ui.table-head class="w-10">
                                 <input type="checkbox" class="rounded border-input"
                                        @change="document.querySelectorAll('input[data-log-cb]').forEach(cb => cb.checked = $event.target.checked); checked = $event.target.checked ? document.querySelectorAll('input[data-log-cb]').length : 0" />
@@ -122,7 +122,7 @@
                             );
                         @endphp
                         <x-ui.table-row>
-                            @if ($isSuperAdmin)
+                            @if ($canDeleteLogs)
                                 <x-ui.table-cell>
                                     <input type="checkbox" data-log-cb name="log_ids[]" value="{{ $log->id }}" class="rounded border-input" />
                                 </x-ui.table-cell>
@@ -181,7 +181,7 @@
                         </x-ui.table-row>
                     @empty
                         <x-ui.table-row>
-                            <x-ui.table-cell colspan="{{ $isSuperAdmin ? 6 : 5 }}" class="text-center py-12 text-muted-foreground">
+                            <x-ui.table-cell colspan="{{ $canDeleteLogs ? 6 : 5 }}" class="text-center py-12 text-muted-foreground">
                                 No activity recorded yet.
                             </x-ui.table-cell>
                         </x-ui.table-row>
