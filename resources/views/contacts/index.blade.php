@@ -77,7 +77,7 @@
 
         {{-- Search bar (for clerks it only appears after a search — the empty-state card below carries the form until then) --}}
         @if (! $isClerk || ($clerkSearched ?? true))
-        <x-ui.card>
+        <x-ui.card class="mt-2">
             <x-ui.card-content class="p-4">
                 <form method="GET" action="{{ route('contacts.index') }}">
                     <div class="flex flex-wrap items-center gap-2">
