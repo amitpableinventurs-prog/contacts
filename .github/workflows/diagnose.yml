@@ -19,12 +19,5 @@ jobs:
           command_timeout: 5m
           script: |
             cd "$HOME/public_html/new_contacts"
-            echo "=== current commit ==="
-            git log --oneline -1
-            echo "=== recent ERROR lines in laravel.log ==="
-            grep -c '\.ERROR' storage/logs/laravel.log 2>/dev/null || echo "0"
-            grep '\.ERROR' storage/logs/laravel.log 2>/dev/null | tail -n 10 | cut -c1-200
-            echo "=== manager account count and null-team count ==="
-            php artisan tinker --execute='echo "managers=", \App\Models\User::where("role","manager")->count(), " managers_without_team=", \App\Models\User::where("role","manager")->whereNull("current_team_id")->count(), "\n";' 2>&1 | tail -3
-            echo "=== search_logs row count ==="
-            php artisan tinker --execute='echo "search_logs_total=", \App\Models\SearchLog::count(), "\n";' 2>&1 | tail -3
+            echo "=== git status ==="
+            git log --oneline -1; git status --short | head -20
