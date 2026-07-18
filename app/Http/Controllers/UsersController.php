@@ -62,6 +62,7 @@ class UsersController extends Controller
     public function create(): View
     {
         Gate::authorize('manage-users');
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403, 'Only Admin and above can add users.');
 
         return view('users.create', ['roles' => $this->allowedRoles()]);
     }
@@ -86,6 +87,7 @@ class UsersController extends Controller
     public function store(Request $request): RedirectResponse
     {
         Gate::authorize('manage-users');
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403, 'Only Admin and above can add users.');
 
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
@@ -127,6 +129,7 @@ class UsersController extends Controller
     {
         Gate::authorize('manage-users');
         abort_unless($this->canActOn($user), 403, 'You cannot edit a Super Admin account.');
+        abort_if($user->isLocked(), 403, 'This user is locked. Unlock it first to make changes.');
 
         return view('users.edit', ['user' => $user, 'roles' => $this->allowedRoles()]);
     }
@@ -135,6 +138,7 @@ class UsersController extends Controller
     {
         Gate::authorize('manage-users');
         abort_unless($this->canActOn($user), 403, 'You cannot edit a Super Admin account.');
+        abort_if($user->isLocked(), 403, 'This user is locked. Unlock it first to make changes.');
 
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
@@ -174,6 +178,7 @@ class UsersController extends Controller
     {
         Gate::authorize('manage-users');
         abort_unless($this->canActOn($user), 403, 'You cannot change a Super Admin password.');
+        abort_if($user->isLocked(), 403, 'This user is locked. Unlock it first to make changes.');
 
         $request->validate([
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -194,11 +199,40 @@ class UsersController extends Controller
         }
 
         abort_unless($this->canActOn($user), 403, 'You cannot delete a Super Admin account.');
+        abort_if($user->isLocked(), 403, 'This user is locked. Unlock it first to delete it.');
 
         ActivityLogger::log('user.deleted', null, ['name' => $user->name, 'email' => $user->email]);
         $user->delete();
 
         return redirect()->route('users.index')
             ->with('toast', ['type' => 'success', 'message' => 'User deleted.']);
+    }
+
+    /**
+     * Lock/unlock a user account. Only Admin and above may lock/unlock —
+     * Manager cannot, even for Clerks it otherwise manages. While locked,
+     * no one can edit, change the password of, or delete the account.
+     */
+    public function lock(User $user): RedirectResponse
+    {
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403, 'Only Admin and above can lock users.');
+        abort_unless($this->canActOn($user), 403);
+        abort_if($user->id === Auth::id(), 403, 'You cannot lock your own account.');
+
+        $user->forceFill(['locked_at' => now(), 'locked_by' => Auth::id()])->save();
+        ActivityLogger::log('user.locked', null, ['name' => $user->name]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => "{$user->name} locked."]);
+    }
+
+    public function unlock(User $user): RedirectResponse
+    {
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403, 'Only Admin and above can unlock users.');
+        abort_unless($this->canActOn($user), 403);
+
+        $user->forceFill(['locked_at' => null, 'locked_by' => null])->save();
+        ActivityLogger::log('user.unlocked', null, ['name' => $user->name]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => "{$user->name} unlocked."]);
     }
 }

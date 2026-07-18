@@ -29,6 +29,11 @@
                                 <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span> Inactive
                             </span>
                         @endif
+                        @if ($user->isLocked())
+                            <span class="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800" title="Locked by {{ $user->lockedBy?->name ?? 'unknown' }}">
+                                🔒 Locked
+                            </span>
+                        @endif
                     </div>
                     <p class="text-sm text-muted-foreground">{{ $user->email }}</p>
                 </div>
@@ -37,7 +42,20 @@
                 <a href="{{ route('users.index') }}">
                     <x-ui.button variant="outline">Back to users</x-ui.button>
                 </a>
-                @if ($canEdit)
+                @if (auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN) && $user->id !== auth()->id())
+                    @if ($user->isLocked())
+                        <form method="POST" action="{{ route('users.unlock', $user) }}">
+                            @csrf @method('PATCH')
+                            <x-ui.button type="submit" variant="outline">🔓 Unlock</x-ui.button>
+                        </form>
+                    @else
+                        <form method="POST" action="{{ route('users.lock', $user) }}" onsubmit="return confirm('Lock {{ addslashes($user->name) }}? No one will be able to edit this account until it is unlocked.')">
+                            @csrf @method('PATCH')
+                            <x-ui.button type="submit" variant="outline">🔒 Lock</x-ui.button>
+                        </form>
+                    @endif
+                @endif
+                @if ($canEdit && ! $user->isLocked())
                     <a href="{{ route('users.edit', $user) }}">
                         <x-ui.button>Edit user</x-ui.button>
                     </a>

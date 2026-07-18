@@ -7,12 +7,14 @@
                 <h1 class="text-2xl font-semibold tracking-tight">Users</h1>
                 <p class="text-sm text-muted-foreground">Manage who can access this application.</p>
             </div>
-            <a href="{{ route('users.create') }}">
-                <x-ui.button>
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Add user
-                </x-ui.button>
-            </a>
+            @if (auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN))
+                <a href="{{ route('users.create') }}">
+                    <x-ui.button>
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Add user
+                    </x-ui.button>
+                </a>
+            @endif
         </div>
 
         <x-ui.card class="overflow-hidden">
@@ -56,15 +58,22 @@
                                 </span>
                             </x-ui.table-cell>
                             <x-ui.table-cell class="hidden md:table-cell">
-                                @if ($user->is_active ?? true)
-                                    <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span> Active
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 text-xs font-medium text-red-700">
-                                        <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span> Inactive
-                                    </span>
-                                @endif
+                                <div class="flex items-center gap-2">
+                                    @if ($user->is_active ?? true)
+                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-700">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span> Active
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-red-700">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span> Inactive
+                                        </span>
+                                    @endif
+                                    @if ($user->isLocked())
+                                        <span class="inline-flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800" title="Locked by {{ $user->lockedBy?->name ?? 'unknown' }}">
+                                            🔒 Locked
+                                        </span>
+                                    @endif
+                                </div>
                             </x-ui.table-cell>
                             <x-ui.table-cell class="hidden lg:table-cell text-sm text-muted-foreground">
                                 {{ $user->created_at->format('M j, Y') }}
@@ -77,8 +86,24 @@
                                         </button>
                                     </x-slot:trigger>
                                     <x-ui.dropdown-menu-item :href="route('users.show', $user)">View</x-ui.dropdown-menu-item>
-                                    <x-ui.dropdown-menu-item :href="route('users.edit', $user)">Edit</x-ui.dropdown-menu-item>
-                                    @if ($user->id !== auth()->id())
+                                    @if (! $user->isLocked())
+                                        <x-ui.dropdown-menu-item :href="route('users.edit', $user)">Edit</x-ui.dropdown-menu-item>
+                                    @endif
+                                    @if (auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN) && $user->id !== auth()->id())
+                                        <x-ui.dropdown-menu-separator />
+                                        @if ($user->isLocked())
+                                            <form method="POST" action="{{ route('users.unlock', $user) }}">
+                                                @csrf @method('PATCH')
+                                                <x-ui.dropdown-menu-item as="button" type="submit">🔓 Unlock</x-ui.dropdown-menu-item>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('users.lock', $user) }}" onsubmit="return confirm('Lock {{ addslashes($user->name) }}? No one will be able to edit this account until it is unlocked.')">
+                                                @csrf @method('PATCH')
+                                                <x-ui.dropdown-menu-item as="button" type="submit">🔒 Lock</x-ui.dropdown-menu-item>
+                                            </form>
+                                        @endif
+                                    @endif
+                                    @if ($user->id !== auth()->id() && ! $user->isLocked())
                                         <x-ui.dropdown-menu-separator />
                                         <form method="POST" action="{{ route('users.destroy', $user) }}" onsubmit="return confirm('Delete {{ addslashes($user->name) }}?')">
                                             @csrf @method('DELETE')

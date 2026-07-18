@@ -69,6 +69,8 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/users/{user}', [UsersController::class, 'update'])->name('users.update');
     Route::patch('/users/{user}/password', [UsersController::class, 'changePassword'])->name('users.password');
     Route::delete('/users/{user}', [UsersController::class, 'destroy'])->name('users.destroy');
+    Route::patch('/users/{user}/lock', [UsersController::class, 'lock'])->name('users.lock');
+    Route::patch('/users/{user}/unlock', [UsersController::class, 'unlock'])->name('users.unlock');
 
     // -------------------------------------------------------------------------
     // Team (Manager: their Clerks; Admin: every Manager + Clerk)
