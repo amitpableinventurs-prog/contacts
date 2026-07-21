@@ -10,6 +10,13 @@ $isSuperAdmin = $user?->isSuperAdmin();
 $isAdminPlus  = $isAdmin || $isSuperAdmin;
 $isManagerPlus = $isManager || $isAdminPlus;
 
+// Every role currently shares one team record, so its stored name (e.g.
+// "Super Admin's Workspace") would show up unchanged no matter who's
+// logged in. Label the workspace by the viewer's own role instead.
+$workspaceLabel = $user
+    ? ucwords(str_replace('_', ' ', $user->role ?? 'user')).'\'s Workspace'
+    : ($currentTeam->name ?? 'Workspace');
+
 $nav = array_filter([
 
     // ── Always visible ───────────────────────────────────────────────────
@@ -126,7 +133,7 @@ $brand = app(\App\Settings\GeneralSettings::class);
         {{-- Clerks are locked to the workspace they were assigned to — no switcher, just the name. --}}
         <div class="w-full px-4 py-3 border-b text-left">
             <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
-            <div class="mt-0.5 text-sm font-medium truncate">{{ $currentTeam->name }}</div>
+            <div class="mt-0.5 text-sm font-medium truncate">{{ $workspaceLabel }}</div>
         </div>
     @else
         @php
@@ -138,7 +145,7 @@ $brand = app(\App\Settings\GeneralSettings::class);
                     <div class="flex items-center gap-2">
                         <div class="flex-1 min-w-0">
                             <div class="text-[10px] uppercase tracking-wider text-muted-foreground">Workspace</div>
-                            <div class="mt-0.5 text-sm font-medium truncate">{{ $currentTeam->name }}</div>
+                            <div class="mt-0.5 text-sm font-medium truncate">{{ $workspaceLabel }}</div>
                         </div>
                         <svg class="h-3 w-3 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"/></svg>
                     </div>
