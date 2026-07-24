@@ -314,7 +314,11 @@ $canEditNotes = $canEditNotes ?? $canEdit;
 function htmlEditor(fieldName) {
     return {
         init() {
-            this.$refs.editor.innerHTML = this.$refs.hidden.value || '';
+            // A completely empty contenteditable (no child nodes at all) has no
+            // line box for the browser to anchor a caret to, so clicking into it
+            // on a new contact can silently fail to accept typing. Seed a <br>
+            // so there's always somewhere for the cursor to land.
+            this.$refs.editor.innerHTML = this.$refs.hidden.value || '<br>';
         },
         exec(cmd) {
             document.execCommand(cmd, false, null);
