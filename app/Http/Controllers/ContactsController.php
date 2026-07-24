@@ -323,7 +323,7 @@ class ContactsController extends Controller
         }
 
         // Track which fields changed for edit history.
-        $trackFields = ['name','email','phone','company','job_title','website','address','city','notes'];
+        $trackFields = ['name','email','phone','company','job_title','website','address','city','notes','description_html'];
         $changed = [];
         foreach ($trackFields as $field) {
             $old = $contact->$field;

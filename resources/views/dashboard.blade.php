@@ -1,7 +1,10 @@
 <x-app-layout>
     <x-slot:header>Dashboard</x-slot:header>
 
-    @php $isClerk = auth()->user()->isClerk(); @endphp
+    @php
+        $isClerk = auth()->user()->isClerk();
+        $isManager = auth()->user()->isManager();
+    @endphp
 
     <div class="flex items-start justify-center min-h-[60vh] pt-16">
         <div class="w-full max-w-lg space-y-6">
@@ -38,7 +41,7 @@
                 <x-ui.button type="submit" class="h-11 px-6">Search</x-ui.button>
             </form>
 
-            @unless ($isClerk)
+            @unless ($isClerk || $isManager)
                 <div class="text-center">
                     <a href="{{ route('contacts.index') }}" class="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">View all contacts →</a>
                 </div>
