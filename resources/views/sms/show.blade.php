@@ -20,7 +20,16 @@
             <div class="flex flex-col gap-3 p-4 max-h-[60vh] overflow-y-auto">
                 @forelse ($messages as $message)
                     @php $isOut = $message->direction === 'outbound'; $isWA = $message->channel === 'whatsapp'; @endphp
-                    <div class="flex {{ $isOut ? 'justify-end' : 'justify-start' }}">
+                    <div class="flex items-end gap-1 {{ $isOut ? 'justify-end' : 'justify-start' }}">
+                        @if ($isOut && auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN))
+                            <form method="POST" action="{{ route('sms.destroy', $message) }}" onsubmit="return confirm('Delete this sent message? This cannot be undone.')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="rounded-md p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Delete message">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                        @endif
                         <div class="max-w-[85%] sm:max-w-[75%]">
                             <div @class([
                                 'rounded-2xl px-3 py-2 text-sm whitespace-pre-line',

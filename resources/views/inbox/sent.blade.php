@@ -1,15 +1,15 @@
 <x-app-layout>
-    <x-slot:header>Inbox</x-slot:header>
+    <x-slot:header>Inbox / Sent</x-slot:header>
 
     <div class="space-y-4">
         <div class="flex items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-semibold tracking-tight">Inbox</h1>
-                <p class="text-sm text-muted-foreground">Messages from other users.</p>
+                <h1 class="text-2xl font-semibold tracking-tight">Sent messages</h1>
+                <p class="text-sm text-muted-foreground">Messages you've sent to other users.</p>
             </div>
             <div class="flex items-center gap-2">
-                <a href="{{ route('inbox.sent') }}">
-                    <x-ui.button variant="outline">Sent</x-ui.button>
+                <a href="{{ route('inbox.index') }}">
+                    <x-ui.button variant="outline">Received</x-ui.button>
                 </a>
                 <a href="{{ route('inbox.create') }}">
                     <x-ui.button>
@@ -24,7 +24,7 @@
             <x-ui.table>
                 <x-ui.table-header>
                     <x-ui.table-row class="hover:bg-transparent">
-                        <x-ui.table-head>From</x-ui.table-head>
+                        <x-ui.table-head>To</x-ui.table-head>
                         <x-ui.table-head>Message</x-ui.table-head>
                         <x-ui.table-head class="hidden sm:table-cell">When</x-ui.table-head>
                         <x-ui.table-head class="w-10"></x-ui.table-head>
@@ -32,14 +32,11 @@
                 </x-ui.table-header>
                 <x-ui.table-body>
                     @forelse ($messages as $message)
-                        <x-ui.table-row class="{{ $message->read_at ? '' : 'font-medium bg-primary/5' }}">
+                        <x-ui.table-row>
                             <x-ui.table-cell>
                                 <a href="{{ route('inbox.show', $message) }}" class="flex items-center gap-2 group">
-                                    <x-ui.avatar :name="$message->sender?->name ?? 'Unknown'" size="xs" />
-                                    <span class="group-hover:underline">{{ $message->sender?->name ?? 'Unknown' }}</span>
-                                    @if (! $message->read_at)
-                                        <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                                    @endif
+                                    <x-ui.avatar :name="$message->recipient?->name ?? 'Unknown'" size="xs" />
+                                    <span class="group-hover:underline">{{ $message->recipient?->name ?? 'Unknown' }}</span>
                                 </a>
                             </x-ui.table-cell>
                             <x-ui.table-cell class="text-sm text-muted-foreground">
@@ -59,7 +56,7 @@
                         </x-ui.table-row>
                     @empty
                         <x-ui.table-row>
-                            <x-ui.table-cell colspan="4" class="text-center py-12 text-muted-foreground">No messages yet.</x-ui.table-cell>
+                            <x-ui.table-cell colspan="4" class="text-center py-12 text-muted-foreground">You haven't sent any messages yet.</x-ui.table-cell>
                         </x-ui.table-row>
                     @endforelse
                 </x-ui.table-body>

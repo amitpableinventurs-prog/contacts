@@ -7,12 +7,20 @@
                 <h1 class="text-2xl font-semibold tracking-tight">Messages</h1>
                 <p class="text-sm text-muted-foreground">Two-way SMS conversations with your contacts.</p>
             </div>
-            <a href="{{ route('contacts.index') }}">
-                <x-ui.button variant="outline">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Start a conversation
-                </x-ui.button>
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('sms.sent') }}">
+                    <x-ui.button variant="outline">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Sent messages
+                    </x-ui.button>
+                </a>
+                <a href="{{ route('contacts.index') }}">
+                    <x-ui.button variant="outline">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        Start a conversation
+                    </x-ui.button>
+                </a>
+            </div>
         </div>
 
         @if (config('twilio.fake'))

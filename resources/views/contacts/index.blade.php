@@ -48,22 +48,14 @@
                 @endif
             </div>
             <div class="flex items-center gap-2">
-                @can('manage-export')
-                    <a href="{{ route('workspace.export') }}">
+                @canany(['manage-export', 'manage-imports'])
+                    <a href="{{ route('contacts.import-export-tools') }}">
                         <x-ui.button variant="outline">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                            Export
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4M16 17H4m0 0l4 4m-4-4l4-4"/></svg>
+                            Import / Export
                         </x-ui.button>
                     </a>
-                @endcan
-                @can('manage-imports')
-                    <a href="{{ route('imports.form') }}">
-                        <x-ui.button variant="outline">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                            Import
-                        </x-ui.button>
-                    </a>
-                @endcan
+                @endcanany
                 @can('create', \App\Models\Contact::class)
                     <a href="{{ route('contacts.create') }}">
                         <x-ui.button>
@@ -217,23 +209,12 @@
             @endif
         </div>
 
-        {{-- Bulk delete by count — Super Admin only, PIN-protected --}}
+        {{-- Bulk delete by count now lives on its own page — Super Admin only --}}
         @if (auth()->user()->isSuperAdmin())
-            <div class="flex flex-wrap items-center gap-2">
-                <span class="text-sm text-muted-foreground">Bulk delete:</span>
-                @foreach ([500, 1000, 3000, 5000] as $count)
-                    <form method="POST" action="{{ route('contacts.bulk') }}"
-                          onsubmit="return confirmDeleteWithPin(this, 'Move {{ $count }} contacts to trash? This cannot be undone easily.')">
-                        @csrf
-                        <input type="hidden" name="action" value="delete_count" />
-                        <input type="hidden" name="bulk_count" value="{{ $count }}" />
-                        <input type="hidden" name="pin" value="" />
-                        <x-ui.button type="submit" variant="outline" size="sm">
-                            🗑 {{ number_format($count) }}
-                        </x-ui.button>
-                    </form>
-                @endforeach
-                <span class="text-xs text-muted-foreground">(deletes oldest contacts first)</span>
+            <div>
+                <a href="{{ route('contacts.delete-tools') }}" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground underline underline-offset-4">
+                    🗑 Bulk delete tools
+                </a>
             </div>
         @endif
 

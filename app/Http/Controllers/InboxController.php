@@ -29,6 +29,16 @@ class InboxController extends Controller
         return view('inbox.index', compact('messages'));
     }
 
+    public function sent(): View
+    {
+        $messages = UserMessage::where('sender_id', Auth::id())
+            ->with('recipient')
+            ->latest()
+            ->paginate(25);
+
+        return view('inbox.sent', compact('messages'));
+    }
+
     public function create(): View
     {
         return view('inbox.create', ['recipients' => $this->recipientOptions()]);

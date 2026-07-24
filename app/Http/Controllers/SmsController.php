@@ -6,9 +6,11 @@ use App\Models\Contact;
 use App\Models\Message;
 use App\Services\AnthropicClient;
 use App\Services\TwilioClient;
+use App\Support\Roles;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
@@ -31,6 +33,35 @@ class SmsController extends Controller
             ->paginate(20);
 
         return view('sms.index', compact('conversations'));
+    }
+
+    public function sent(): View
+    {
+        Gate::authorize('messaging');
+
+        $teamId = Auth::user()->current_team_id;
+
+        $messages = Message::with('contact', 'user')
+            ->where('direction', 'outbound')
+            ->when(! Auth::user()->isSuperAdmin(), fn ($q) => $q->where('team_id', $teamId))
+            ->latest('sent_at')
+            ->paginate(20);
+
+        return view('sms.sent', compact('messages'));
+    }
+
+    public function destroy(Message $message): RedirectResponse
+    {
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403);
+        if ($message->contact) {
+            Gate::authorize('view', $message->contact);
+        } else {
+            abort_unless(Auth::user()->isSuperAdmin(), 403);
+        }
+
+        $message->delete();
+
+        return back()->with('toast', ['type' => 'success', 'message' => 'Message deleted.']);
     }
 
     public function show(Contact $contact): View

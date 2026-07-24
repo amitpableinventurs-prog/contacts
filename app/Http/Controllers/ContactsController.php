@@ -192,6 +192,27 @@ class ContactsController extends Controller
     }
 
     // ------------------------------------------------------------------
+    // Data tools (kept off the main Contacts page — Super Admin only)
+    // ------------------------------------------------------------------
+
+    public function deleteTools(): View
+    {
+        // Bulk-delete-by-count is Super Admin only (see bulk() below).
+        abort_unless(Auth::user()->isSuperAdmin(), 403);
+
+        return view('contacts.delete-tools');
+    }
+
+    public function importExportTools(): View
+    {
+        if (! Gate::any(['manage-export', 'manage-imports'])) {
+            abort(403);
+        }
+
+        return view('contacts.import-export');
+    }
+
+    // ------------------------------------------------------------------
     // Create / Store
     // ------------------------------------------------------------------
 

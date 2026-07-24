@@ -82,6 +82,7 @@ Route::middleware(['auth'])->group(function () {
     // Inbox (internal messaging between users of any role)
     // -------------------------------------------------------------------------
     Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index');
+    Route::get('/inbox/sent', [InboxController::class, 'sent'])->name('inbox.sent');
     Route::get('/inbox/compose', [InboxController::class, 'create'])->name('inbox.create');
     Route::post('/inbox', [InboxController::class, 'store'])->name('inbox.store');
     Route::get('/inbox/{message}', [InboxController::class, 'show'])->name('inbox.show');
@@ -96,6 +97,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/contacts/autocomplete', [ContactsController::class, 'autocomplete'])->name('contacts.autocomplete');
     Route::post('/contacts/suggest-tags', [ContactsController::class, 'suggestTags'])->name('contacts.suggest-tags');
     Route::get('/contacts/pending', [ContactsController::class, 'pending'])->name('contacts.pending');
+    Route::get('/contacts/tools/delete', [ContactsController::class, 'deleteTools'])->name('contacts.delete-tools');
+    Route::get('/contacts/tools/import-export', [ContactsController::class, 'importExportTools'])->name('contacts.import-export-tools');
     Route::post('/contacts/{contact}/approve', [ContactsController::class, 'approve'])->name('contacts.approve');
     Route::post('/contacts/{contact}/reject', [ContactsController::class, 'reject'])->name('contacts.reject');
     Route::post('/contact-edits/{editRequest}/approve', [ContactsController::class, 'approveEdit'])->name('contact-edits.approve');
@@ -147,6 +150,8 @@ Route::middleware(['auth'])->group(function () {
     // SMS / Messaging
     // -------------------------------------------------------------------------
     Route::get('/sms', [SmsController::class, 'index'])->name('sms.index');
+    Route::get('/sms/sent', [SmsController::class, 'sent'])->name('sms.sent');
+    Route::delete('/sms/message/{message}', [SmsController::class, 'destroy'])->name('sms.destroy');
     Route::get('/sms/{contact}', [SmsController::class, 'show'])->name('sms.show');
     Route::post('/sms/{contact}', [SmsController::class, 'store'])->name('sms.store');
     Route::post('/messaging/spell-check', [SmsController::class, 'spellCheck'])->name('messaging.spell-check');
