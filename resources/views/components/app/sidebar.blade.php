@@ -94,14 +94,14 @@ $nav = array_filter([
                 ? ['name' => 'Login logs', 'route' => 'login-logs.index',
                    'icon' => 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z']
                 : null,
-            // Import / Export — Super Admin only (PIN-protected pages).
+            // Import / Export and Delete tools — Super Admin only (PIN-protected pages).
             $isSuperAdmin
-                ? ['name' => 'Import contacts', 'route' => 'imports.form',
+                ? ['name' => 'Import / Export', 'route' => 'contacts.import-export-tools',
                    'icon' => 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12']
                 : null,
             $isSuperAdmin
-                ? ['name' => 'Export contacts', 'route' => 'workspace.export',
-                   'icon' => 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4']
+                ? ['name' => 'Delete contacts', 'route' => 'contacts.delete-tools',
+                   'icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16']
                 : null,
             $isAdminPlus
                 ? ['name' => 'Settings', 'route' => 'settings.index',
