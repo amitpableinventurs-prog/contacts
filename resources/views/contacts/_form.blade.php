@@ -99,7 +99,7 @@ $canEditNotes = $canEditNotes ?? $canEdit;
                 </div>
                 {{-- Editor --}}
                 <div x-ref="editor"
-                     {{ !$canEdit ? '' : 'contenteditable="true"' }}
+                     {!! !$canEdit ? '' : 'contenteditable="true"' !!}
                      @input="sync"
                      class="min-h-[140px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring prose prose-sm max-w-none {{ !$canEdit ? 'opacity-60 cursor-not-allowed' : '' }}"
                 >{!! old('description_html', $contact?->description_html) !!}</div>
