@@ -21,3 +21,10 @@ jobs:
             cd "$HOME/public_html/new_contacts"
             echo "=== git status ==="
             git log --oneline -1; git status --short | head -20
+            echo "=== htmlEditor init() on server ==="
+            grep -n "innerHTML = this" resources/views/contacts/_form.blade.php
+            echo "=== compiled view cache for _form.blade.php ==="
+            ls -la storage/framework/views | grep -c ".php$"
+            find storage/framework/views -name "*.php" -newer resources/views/contacts/_form.blade.php | wc -l
+            echo "=== APP env ==="
+            grep -E "^APP_ENV|^APP_DEBUG|^VIEW" .env
