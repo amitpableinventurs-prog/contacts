@@ -472,6 +472,65 @@ class ContactsController extends Controller
     }
 
     // ------------------------------------------------------------------
+    // Trash (soft-deleted contacts: restore or permanently purge)
+    // ------------------------------------------------------------------
+
+    public function trash(): View
+    {
+        abort_unless(Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN), 403);
+
+        $contacts = Contact::onlyTrashed()
+            ->where('team_id', Auth::user()->current_team_id)
+            ->orderByDesc('deleted_at')
+            ->paginate(25);
+
+        return view('contacts.trash', compact('contacts'));
+    }
+
+    public function restore(Contact $contact): RedirectResponse
+    {
+        Gate::authorize('restore', $contact);
+
+        $contact->restore();
+        ActivityLogger::log('contact.restored', $contact, ['name' => $contact->name]);
+
+        return back()->with('toast', ['type' => 'success', 'message' => "{$contact->name} restored."]);
+    }
+
+    public function forceDestroy(Request $request, Contact $contact): RedirectResponse
+    {
+        Gate::authorize('forceDelete', $contact);
+
+        // Unlike the soft "move to trash" delete, this is irreversible — require
+        // the PIN from every role that can reach it, not just Super Admin.
+        if ((string) $request->input('pin') !== (string) env('EXPORT_PIN')) {
+            return back()->withErrors(['pin' => 'Incorrect PIN.']);
+        }
+
+        $name = $contact->name;
+        ActivityLogger::log('contact.purged', $contact, ['name' => $name]);
+        $contact->forceDelete();
+
+        return back()->with('toast', ['type' => 'success', 'message' => "{$name} permanently deleted."]);
+    }
+
+    public function emptyTrash(Request $request): RedirectResponse
+    {
+        abort_unless(Auth::user()->isSuperAdmin(), 403);
+
+        if ((string) $request->input('pin') !== (string) env('EXPORT_PIN')) {
+            return back()->withErrors(['pin' => 'Incorrect PIN.']);
+        }
+
+        $teamId = Auth::user()->current_team_id;
+        $trashed = Contact::onlyTrashed()->where('team_id', $teamId);
+        $count = $trashed->count();
+        $trashed->forceDelete();
+
+        return back()->with('toast', ['type' => 'success', 'message' => "{$count} contact(s) permanently deleted."]);
+    }
+
+    // ------------------------------------------------------------------
     // Suspend / Ban
     // ------------------------------------------------------------------
 

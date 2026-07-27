@@ -99,6 +99,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/contacts/pending', [ContactsController::class, 'pending'])->name('contacts.pending');
     Route::get('/contacts/tools/delete', [ContactsController::class, 'deleteTools'])->name('contacts.delete-tools');
     Route::get('/contacts/tools/import-export', [ContactsController::class, 'importExportTools'])->name('contacts.import-export-tools');
+    Route::get('/contacts/trash', [ContactsController::class, 'trash'])->name('contacts.trash');
+    Route::post('/contacts/trash/empty', [ContactsController::class, 'emptyTrash'])->name('contacts.trash.empty');
+    Route::post('/contacts/{contact}/restore', [ContactsController::class, 'restore'])->name('contacts.restore')->withTrashed();
+    Route::delete('/contacts/{contact}/force', [ContactsController::class, 'forceDestroy'])->name('contacts.force-destroy')->withTrashed();
     Route::post('/contacts/{contact}/approve', [ContactsController::class, 'approve'])->name('contacts.approve');
     Route::post('/contacts/{contact}/reject', [ContactsController::class, 'reject'])->name('contacts.reject');
     Route::post('/contact-edits/{editRequest}/approve', [ContactsController::class, 'approveEdit'])->name('contact-edits.approve');
