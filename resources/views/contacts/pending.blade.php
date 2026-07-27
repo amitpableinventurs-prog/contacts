@@ -2,13 +2,13 @@
     <x-slot:header>Contacts / Pending Approvals</x-slot:header>
 
     <div class="space-y-8">
-        {{-- New contacts submitted by Clerks --}}
+        {{-- New contacts submitted by Managers --}}
         <div class="space-y-4">
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">New contacts</h1>
                     <p class="text-sm text-muted-foreground">
-                        Contacts submitted by Clerks that require your approval before becoming active.
+                        Contacts submitted by Managers that require your approval before becoming active.
                     </p>
                 </div>
                 <x-ui.badge class="text-sm px-3 py-1">{{ $contacts->total() }} pending</x-ui.badge>

@@ -140,7 +140,7 @@ class ContactsController extends Controller
         $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
         $groups       = $hasAdvancedSearch ? Group::where('team_id', $teamId)->orderBy('name')->get() : collect();
         $tags         = $hasAdvancedSearch ? Tag::where('team_id', $teamId)->orderBy('name')->get() : collect();
-        $pendingCount = $isClerk ? 0 : Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count();
+        $pendingCount = Gate::allows('approve-contacts') ? Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count() : 0;
         $clerkSearched = ! $isClerk || $number !== '';
 
         if ($isClerk && $number !== '') {
@@ -251,8 +251,8 @@ class ContactsController extends Controller
             }
         }
 
-        // Clerk-created contacts require manager approval before becoming active.
-        $approvalStatus = 'approved';
+        // Manager-created contacts require Admin+ approval before becoming active.
+        $approvalStatus = Auth::user()->isManager() ? 'pending' : 'approved';
 
         $contact = Contact::create([
             ...$data,
@@ -271,8 +271,15 @@ class ContactsController extends Controller
 
         ActivityLogger::log('contact.created', $contact, ['name' => $contact->name, 'approval' => $approvalStatus]);
 
+        // Pending contacts are hidden from the main list (including from the
+        // submitter) until an Admin+ approves them — say so, or "created" reads
+        // as a lie when the contact promptly vanishes from view.
+        $message = $approvalStatus === 'pending'
+            ? "{$contact->name} submitted for approval."
+            : "{$contact->name} created.";
+
         return redirect()->route('contacts.index')
-            ->with('toast', ['type' => 'success', 'message' => "{$contact->name} created."]);
+            ->with('toast', ['type' => 'success', 'message' => $message]);
     }
 
     // ------------------------------------------------------------------

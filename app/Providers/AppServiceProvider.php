@@ -102,8 +102,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-reminders', $managerPlus);
         Gate::define('manage-bulk',      $managerPlus);
 
-        // Manager can approve/reject contacts submitted by Clerks.
-        Gate::define('approve-contacts', $managerPlus);
+        // Manager-created contacts need Admin+ sign-off, so Manager itself is
+        // excluded here — otherwise they could approve their own submissions.
+        Gate::define('approve-contacts', fn (User $user) =>
+            $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN)
+        );
 
         // Only Admin and above can approve/reject a Manager's proposed edit
         // to an existing contact (see ContactsController::update()/approveEdit()).

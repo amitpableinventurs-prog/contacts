@@ -23,7 +23,7 @@
                 <svg class="h-5 w-5 shrink-0 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
                 <span>
                     <span class="font-semibold text-yellow-800">{{ $pendingCount }} contact{{ $pendingCount > 1 ? 's' : '' }} pending approval</span>
-                    <span class="text-yellow-700"> — submitted by Clerks. Click to review.</span>
+                    <span class="text-yellow-700"> — submitted by Managers. Click to review.</span>
                 </span>
                 <svg class="h-4 w-4 ml-auto text-yellow-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </a>

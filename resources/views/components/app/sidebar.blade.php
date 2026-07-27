@@ -29,8 +29,9 @@ $nav = array_filter([
              'icon' => 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z'],
             ['name' => 'Inbox', 'route' => 'inbox.index',
              'icon' => 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'],
-            // Pending approvals — visible to manager and above
-            $isManagerPlus
+            // Pending approvals — Admin+ only; Manager is now the submitter being
+            // reviewed here, not the reviewer (see approve-contacts gate).
+            $isAdminPlus
                 ? ['name' => 'Pending Approvals', 'route' => 'contacts.pending',
                    'icon' => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z']
                 : null,
