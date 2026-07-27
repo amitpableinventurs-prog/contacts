@@ -19,14 +19,6 @@
                         <x-ui.label for="name">Name</x-ui.label>
                         <x-ui.input id="name" name="name" required placeholder="e.g. VIP" />
                     </div>
-                    <div class="space-y-1.5">
-                        <x-ui.label for="color">Accent</x-ui.label>
-                        <select id="color" name="color" class="flex h-9 w-32 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-ring">
-                            @foreach (['violet', 'blue', 'emerald', 'amber', 'rose', 'slate'] as $c)
-                                <option value="{{ $c }}">{{ ucfirst($c) }}</option>
-                            @endforeach
-                        </select>
-                    </div>
                     <x-ui.button type="submit">Add tag</x-ui.button>
                 </form>
                 @error('name') <p class="text-xs text-destructive mt-2">{{ $message }}</p> @enderror
@@ -63,11 +55,6 @@
                             <form x-show="editing" x-cloak method="POST" action="{{ route('tags.update', $tag) }}" class="flex flex-wrap items-end gap-3">
                                 @csrf @method('PATCH')
                                 <x-ui.input name="name" value="{{ $tag->name }}" required class="flex-1 min-w-[200px]" />
-                                <select name="color" class="flex h-9 w-32 rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-ring">
-                                    @foreach (['violet', 'blue', 'emerald', 'amber', 'rose', 'slate'] as $c)
-                                        <option value="{{ $c }}" @selected($tag->color === $c)>{{ ucfirst($c) }}</option>
-                                    @endforeach
-                                </select>
                                 <x-ui.button type="submit" size="sm">Save</x-ui.button>
                                 <x-ui.button type="button" variant="ghost" size="sm" @click="editing = false">Cancel</x-ui.button>
                             </form>

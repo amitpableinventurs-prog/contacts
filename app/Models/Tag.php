@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
 
-#[Fillable(['team_id', 'name', 'slug', 'color'])]
+#[Fillable(['team_id', 'name', 'slug'])]
 class Tag extends Model
 {
     use BelongsToTeam;

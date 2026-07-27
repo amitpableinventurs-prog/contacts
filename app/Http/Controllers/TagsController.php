@@ -25,8 +25,7 @@ class TagsController extends Controller
         Gate::authorize('manage-tags');
 
         $data = $request->validate([
-            'name'  => ['required', 'string', 'max:60'],
-            'color' => ['nullable', 'string', 'max:16'],
+            'name' => ['required', 'string', 'max:60'],
         ]);
 
         $teamId = auth()->user()->current_team_id;
@@ -45,7 +44,7 @@ class TagsController extends Controller
     {
         Gate::authorize('manage-tags');
 
-        $data    = $request->validate(['name' => ['required', 'string', 'max:60'], 'color' => ['nullable', 'string', 'max:16']]);
+        $data    = $request->validate(['name' => ['required', 'string', 'max:60']]);
         $newSlug = Str::slug($data['name']);
 
         if ($newSlug !== $tag->slug && Tag::where('slug', $newSlug)->where('id', '!=', $tag->id)->exists()) {
