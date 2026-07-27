@@ -21,10 +21,16 @@ jobs:
             cd "$HOME/public_html/new_contacts"
             echo "=== git status ==="
             git log --oneline -1; git status --short | head -20
-            echo "=== htmlEditor init() on server ==="
-            grep -n "innerHTML = this" resources/views/contacts/_form.blade.php
-            echo "=== compiled view cache for _form.blade.php ==="
-            ls -la storage/framework/views | grep -c ".php$"
-            find storage/framework/views -name "*.php" -newer resources/views/contacts/_form.blade.php | wc -l
-            echo "=== APP env ==="
-            grep -E "^APP_ENV|^APP_DEBUG|^VIEW" .env
+            echo "=== recent DB-related errors in laravel.log ==="
+            tail -n 400 storage/logs/laravel.log 2>/dev/null | grep -iE "duplicate entry|auto_increment|SQLSTATE|integrity constraint" | tail -30
+            echo "=== tags / groups id vs auto_increment ==="
+            php artisan tinker --execute="
+              echo 'tags max id: ' . (App\Models\Tag::max('id') ?? 0) . PHP_EOL;
+              echo 'tags count: ' . App\Models\Tag::count() . PHP_EOL;
+              \$t = DB::select('SHOW TABLE STATUS LIKE \'tags\'');
+              echo 'tags AUTO_INCREMENT: ' . (\$t[0]->Auto_increment ?? 'n/a') . PHP_EOL;
+              echo 'groups max id: ' . (App\Models\Group::max('id') ?? 0) . PHP_EOL;
+              echo 'groups count: ' . App\Models\Group::count() . PHP_EOL;
+              \$g = DB::select('SHOW TABLE STATUS LIKE \'groups\'');
+              echo 'groups AUTO_INCREMENT: ' . (\$g[0]->Auto_increment ?? 'n/a') . PHP_EOL;
+            "
