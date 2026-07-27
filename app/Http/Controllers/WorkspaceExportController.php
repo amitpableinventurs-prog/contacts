@@ -50,7 +50,7 @@ class WorkspaceExportController extends Controller
 
             $fp = fopen('php://output', 'w');
 
-            fputcsv($fp, ['Name', 'Email', 'Phone', 'Phone Country', 'City', 'Birthday', 'Company', 'Job Title', 'Website', 'Address', 'Status', 'Rating', 'Lifecycle Stage', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Group', 'Tags', 'Custom Fields', 'Owner', 'Created At', 'Last Contacted']);
+            fputcsv($fp, ['Name', 'Email', 'Phone', 'Phone Country', 'City', 'Birthday', 'Company', 'Job Title', 'Website', 'Address', 'Status', 'Rating', 'Lifecycle Stage', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Category', 'Tags', 'Custom Fields', 'Owner', 'Created At', 'Last Contacted']);
 
             $query = Contact::where('team_id', $team->id)
                 ->where(function ($q) {

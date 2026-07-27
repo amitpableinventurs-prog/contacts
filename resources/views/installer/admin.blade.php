@@ -71,7 +71,7 @@
                     <div class="flex-1">
                         <div class="font-medium text-sm">Load demo data so I can see the app in action</div>
                         <p class="text-xs text-muted-foreground mt-0.5">
-                            Adds 12 sample contacts (Ada Lovelace, Grace Hopper, …), 4 groups, 7 tags, and 5 follow-up reminders. Safe to delete from inside the app anytime.
+                            Adds 12 sample contacts (Ada Lovelace, Grace Hopper, …), 4 categories, 7 tags, and 5 follow-up reminders. Safe to delete from inside the app anytime.
                         </p>
                     </div>
                 </label>

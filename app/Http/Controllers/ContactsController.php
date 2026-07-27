@@ -938,7 +938,7 @@ class ContactsController extends Controller
         };
 
         $label = match ($action) {
-            'group'  => 'Group updated.',
+            'group'  => 'Category updated.',
             'tag'    => 'Tag added.',
             'delete' => count($ids).' contact(s) deleted.',
             default  => 'Done.',

@@ -1,16 +1,16 @@
 <x-app-layout>
-    <x-slot:header>Library / Groups</x-slot:header>
+    <x-slot:header>Library / Categories</x-slot:header>
 
     <div class="max-w-3xl space-y-4">
         <div>
-            <h1 class="text-2xl font-semibold tracking-tight">Groups</h1>
-            <p class="text-sm text-muted-foreground">Organize contacts into segments. Each contact can belong to one group.</p>
+            <h1 class="text-2xl font-semibold tracking-tight">Categories</h1>
+            <p class="text-sm text-muted-foreground">Organize contacts into segments. Each contact can belong to one category.</p>
         </div>
 
         @if (!auth()->user()->isManager())
         <x-ui.card>
             <x-ui.card-header>
-                <x-ui.card-title>New group</x-ui.card-title>
+                <x-ui.card-title>New category</x-ui.card-title>
             </x-ui.card-header>
             <x-ui.card-content>
                 <form method="POST" action="{{ route('groups.store') }}" class="flex flex-wrap gap-3 items-end">
@@ -23,7 +23,7 @@
                         <x-ui.label for="color">Color</x-ui.label>
                         <input id="color" name="color" type="color" value="#a855f7" class="h-9 w-12 rounded-md border border-input cursor-pointer" />
                     </div>
-                    <x-ui.button type="submit">Add group</x-ui.button>
+                    <x-ui.button type="submit">Add category</x-ui.button>
                 </form>
                 @error('name') <p class="text-xs text-destructive mt-2">{{ $message }}</p> @enderror
             </x-ui.card-content>
@@ -32,12 +32,12 @@
 
         <x-ui.card class="overflow-hidden">
             <x-ui.card-header>
-                <x-ui.card-title>All groups</x-ui.card-title>
-                <x-ui.card-description>{{ $groups->count() }} {{ \Illuminate\Support\Str::plural('group', $groups->count()) }}</x-ui.card-description>
+                <x-ui.card-title>All categories</x-ui.card-title>
+                <x-ui.card-description>{{ $groups->count() }} {{ \Illuminate\Support\Str::plural('category', $groups->count()) }}</x-ui.card-description>
             </x-ui.card-header>
             @if ($groups->isEmpty())
                 <x-ui.card-content>
-                    <p class="text-sm text-muted-foreground text-center py-8">No groups yet.</p>
+                    <p class="text-sm text-muted-foreground text-center py-8">No categories yet.</p>
                 </x-ui.card-content>
             @else
                 <ul class="divide-y">
@@ -50,7 +50,7 @@
                                     <div class="text-xs text-muted-foreground">{{ $group->contacts_count }} {{ \Illuminate\Support\Str::plural('contact', $group->contacts_count) }}</div>
                                 </div>
                                 <x-ui.button type="button" variant="ghost" size="sm" @click="editing = true">Edit</x-ui.button>
-                                <form method="POST" action="{{ route('groups.destroy', $group) }}" onsubmit="return confirm('Delete group {{ addslashes($group->name) }}? Contacts will be moved to no-group.')">
+                                <form method="POST" action="{{ route('groups.destroy', $group) }}" onsubmit="return confirm('Delete category {{ addslashes($group->name) }}? Contacts will be moved to no-category.')">
                                     @csrf @method('DELETE')
                                     <x-ui.button type="submit" variant="ghost" size="sm" class="text-destructive hover:text-destructive">Delete</x-ui.button>
                                 </form>

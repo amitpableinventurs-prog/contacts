@@ -21,7 +21,7 @@
                     <strong class="block text-foreground mb-0.5">Demo data loaded</strong>
                     <span class="text-muted-foreground">
                         Added {{ $seeded['contacts'] }} contact{{ $seeded['contacts'] === 1 ? '' : 's' }},
-                        {{ $seeded['groups'] }} group{{ $seeded['groups'] === 1 ? '' : 's' }},
+                        {{ $seeded['groups'] }} categor{{ $seeded['groups'] === 1 ? 'y' : 'ies' }},
                         {{ $seeded['tags'] }} tag{{ $seeded['tags'] === 1 ? '' : 's' }},
                         and {{ $seeded['reminders'] }} reminder{{ $seeded['reminders'] === 1 ? '' : 's' }}.
                         Delete them from inside the app whenever you're ready to start fresh.

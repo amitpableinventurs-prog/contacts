@@ -226,9 +226,9 @@ $canEditNotes = $canEditNotes ?? $canEdit;
             </x-ui.card-header>
             <x-ui.card-content class="space-y-4">
                 <div class="space-y-1.5">
-                    <x-ui.label for="group_id">Group</x-ui.label>
+                    <x-ui.label for="group_id">Category</x-ui.label>
                     <select id="group_id" name="group_id" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring disabled:opacity-50 disabled:cursor-not-allowed" {{ !$canEdit ? 'disabled' : '' }}>
-                        <option value="">No group</option>
+                        <option value="">No category</option>
                         @foreach ($groups as $group)
                             <option value="{{ $group->id }}" @selected(old('group_id', $contact?->group_id) == $group->id)>{{ $group->name }}</option>
                         @endforeach

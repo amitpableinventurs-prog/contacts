@@ -56,9 +56,9 @@
                         </div>
                     </label>
                     <div class="space-y-1.5">
-                        <x-ui.label for="group_id">Optional: assign all imported contacts to a group</x-ui.label>
+                        <x-ui.label for="group_id">Optional: assign all imported contacts to a category</x-ui.label>
                         <select id="group_id" name="group_id" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
-                            <option value="">No group</option>
+                            <option value="">No category</option>
                             @foreach ($groups as $group)
                                 <option value="{{ $group->id }}">{{ $group->name }}</option>
                             @endforeach

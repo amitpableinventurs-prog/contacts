@@ -55,7 +55,7 @@ class GroupsController extends Controller
         ]);
 
         return redirect()->route('groups.index')
-            ->with('toast', ['type' => 'success', 'message' => "Group \"{$data['name']}\" created."]);
+            ->with('toast', ['type' => 'success', 'message' => "Category \"{$data['name']}\" created."]);
     }
 
     public function edit(Group $group): View
@@ -79,7 +79,7 @@ class GroupsController extends Controller
         $group->update($data);
 
         return redirect()->route('groups.index')
-            ->with('toast', ['type' => 'success', 'message' => 'Group updated.']);
+            ->with('toast', ['type' => 'success', 'message' => 'Category updated.']);
     }
 
     public function destroy(Group $group): RedirectResponse
@@ -92,6 +92,6 @@ class GroupsController extends Controller
         $group->delete();
 
         return redirect()->route('groups.index')
-            ->with('toast', ['type' => 'success', 'message' => 'Group deleted. Contacts moved to no-group.']);
+            ->with('toast', ['type' => 'success', 'message' => 'Category deleted. Contacts moved to no-category.']);
     }
 }

@@ -89,7 +89,7 @@
                         </div>
                         @if ($hasAdvancedSearch ?? false)
                             <select name="group_id" class="flex h-9 w-full sm:w-40 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring">
-                                <option value="">All groups</option>
+                                <option value="">All categories</option>
                                 @foreach ($groups as $group)
                                     <option value="{{ $group->id }}" @selected(request('group_id') == $group->id)>{{ $group->name }}</option>
                                 @endforeach
@@ -132,12 +132,12 @@
             </span>
             <div class="flex-1"></div>
 
-            {{-- Add to group — manager+ only --}}
+            {{-- Add to category — manager+ only --}}
             @if (!auth()->user()->isClerk() && $groups->isNotEmpty())
                 <x-ui.dropdown-menu align="end" width="w-56">
                     <x-slot:trigger>
                         <x-ui.button type="button" variant="outline" size="sm">
-                            Add to group
+                            Add to category
                             <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </x-ui.button>
                     </x-slot:trigger>
@@ -262,7 +262,7 @@
                             @endunless
                             <x-ui.table-head>Name</x-ui.table-head>
                             <x-ui.table-head class="hidden md:table-cell">Company</x-ui.table-head>
-                            <x-ui.table-head class="hidden lg:table-cell">Group</x-ui.table-head>
+                            <x-ui.table-head class="hidden lg:table-cell">Category</x-ui.table-head>
                             <x-ui.table-head class="hidden xl:table-cell">Tags</x-ui.table-head>
                             <x-ui.table-head class="hidden xl:table-cell">Added by</x-ui.table-head>
                             <x-ui.table-head class="w-28"></x-ui.table-head>
