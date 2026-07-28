@@ -28,6 +28,7 @@ class ImportsController extends Controller
         'website' => 'Website',
         'address' => 'Address',
         'city' => 'City',
+        'category' => 'Category',
         'notes' => 'Notes',
         'tags' => 'Tags (comma-separated)',
     ];
@@ -50,7 +51,7 @@ class ImportsController extends Controller
      */
     public function template(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $headers = ['Name', 'Email', 'Phone', 'Company', 'Job title', 'Website', 'Address', 'Notes', 'Tags'];
+        $headers = ['Name', 'Email', 'Phone', 'Company', 'Job title', 'Website', 'Address', 'City', 'Category', 'Notes', 'Tags'];
         $example = [
             'Ada Lovelace',
             'ada@example.com',
@@ -59,6 +60,8 @@ class ImportsController extends Controller
             'CTO',
             'https://example.com',
             '10 Downing St, London',
+            'London',
+            'VIP Customers',
             'Met at Reboot conf — interested in pilot',
             'vip, follow-up',
         ];
@@ -167,6 +170,7 @@ class ImportsController extends Controller
                 str_contains($lower, 'web') => 'website',
                 str_contains($lower, 'address') => 'address',
                 str_contains($lower, 'city') || str_contains($lower, 'town') => 'city',
+                str_contains($lower, 'category') || str_contains($lower, 'group') => 'category',
                 str_contains($lower, 'note') => 'notes',
                 str_contains($lower, 'tag') => 'tags',
                 default => '',
@@ -179,7 +183,7 @@ class ImportsController extends Controller
             'sample' => array_slice($rows, 1, 5),
             'autoMap' => $autoMap,
             'fields' => self::FIELDS,
-            'groups' => Group::orderBy('name')->get(),
+            'groups' => Group::where('team_id', Auth::user()->current_team_id)->orderBy('name')->get(),
         ];
     }
 
@@ -379,6 +383,7 @@ class ImportsController extends Controller
                 'approval_status' => 'approved',
             ];
             $rowTags = [];
+            $rowCategory = null;
 
             foreach ($mapping as $idx => $field) {
                 $value = trim((string) ($row[$idx] ?? ''));
@@ -389,6 +394,8 @@ class ImportsController extends Controller
                     foreach (preg_split('/\s*,\s*/', $value) as $tagName) {
                         if ($tagName !== '') $rowTags[] = $tagName;
                     }
+                } elseif ($field === 'category') {
+                    $rowCategory = $value;
                 } elseif ($field === 'phone') {
                     $attrs[$field] = preg_replace('/[^\d+]/', '', $value);
                 } else {
@@ -408,7 +415,7 @@ class ImportsController extends Controller
             }
 
             $attrs['phone_digits'] = Contact::normalizePhone($attrs['phone'] ?? null);
-            $rows[] = ['attrs' => $attrs, 'tags' => $rowTags];
+            $rows[] = ['attrs' => $attrs, 'tags' => $rowTags, 'category' => $rowCategory];
         }
 
         if (! $rows) {
@@ -416,6 +423,7 @@ class ImportsController extends Controller
         }
 
         $tagIdsFor = $this->resolveTagIds($rows, $teamId);
+        $groupIdFor = $this->resolveGroupIds($rows, $teamId);
 
         // ── Find existing contacts for overwrite mode (one indexed query) ─
         $existingByDigits = collect();
@@ -434,18 +442,19 @@ class ImportsController extends Controller
         $insertColumns = array_fill_keys(
             array_merge(
                 ['team_id', 'owner_id', 'group_id', 'approval_status', 'phone_digits'],
-                array_values(array_diff($mapping, ['tags']))
+                array_values(array_diff($mapping, ['tags', 'category']))
             ),
             null
         );
 
-        DB::transaction(function () use ($rows, $existingByDigits, $tagIdsFor, $insertColumns, &$state) {
+        DB::transaction(function () use ($rows, $existingByDigits, $tagIdsFor, $groupIdFor, $insertColumns, &$state) {
             $now = now();
             $toInsert = [];
 
             foreach ($rows as $i => $row) {
                 $attrs   = $row['attrs'];
                 $tagIds  = $tagIdsFor($i);
+                $attrs['group_id'] = $groupIdFor($i) ?? $attrs['group_id'];
                 $existing = $attrs['phone_digits']
                     ? $existingByDigits->get($attrs['phone_digits'])
                     : null;
@@ -513,6 +522,37 @@ class ImportsController extends Controller
         }
 
         return fn (int $i) => $resolved[$i] ?? [];
+    }
+
+    /**
+     * Resolve per-row category names to group ids. The import-level group_id
+     * remains the fallback when a row has no Category column value.
+     */
+    protected function resolveGroupIds(array $rows, int $teamId): \Closure
+    {
+        static $groupCache = [];
+
+        $canCreateGroups = Gate::allows('manage-groups');
+
+        $resolved = [];
+        foreach ($rows as $i => $row) {
+            $groupName = trim((string) ($row['category'] ?? ''));
+            if ($groupName === '') {
+                $resolved[$i] = null;
+                continue;
+            }
+
+            $cacheKey = $teamId . ':' . mb_strtolower($groupName);
+            if (! array_key_exists($cacheKey, $groupCache)) {
+                $groupCache[$cacheKey] = $canCreateGroups
+                    ? Group::firstOrCreate(['team_id' => $teamId, 'name' => $groupName])
+                    : Group::where('team_id', $teamId)->where('name', $groupName)->first();
+            }
+
+            $resolved[$i] = $groupCache[$cacheKey]?->id;
+        }
+
+        return fn (int $i) => $resolved[$i] ?? null;
     }
 
     // ------------------------------------------------------------------

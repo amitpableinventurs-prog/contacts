@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('contacts', function (Blueprint $table) {
-            // pending = awaiting manager approval (set when clerk creates)
+            // pending = awaiting Admin/Super Admin approval (set when Manager creates)
             // approved = visible & active
             // rejected = soft-rejected by manager
             $table->string('approval_status', 20)->default('approved')->index();

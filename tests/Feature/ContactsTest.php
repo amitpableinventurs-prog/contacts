@@ -33,6 +33,118 @@ it('creates a contact via the form', function () {
         ->owner_id->toBe($this->user->id);
 });
 
+it('requires approval when a manager adds a contact', function () {
+    $manager = makeManagerOnTeam($this->user->current_team_id);
+    $this->actingAs($manager);
+
+    $this->post('/contacts', [
+        'name' => 'Pending Manager Contact',
+        'email' => 'manager-pending@example.com',
+        'phone' => '+15550001111',
+    ])->assertRedirect(route('contacts.index'));
+
+    $contact = Contact::where('email', 'manager-pending@example.com')->firstOrFail();
+
+    expect($contact->approval_status)->toBe('pending')
+        ->and($contact->approved_by)->toBeNull()
+        ->and($contact->approved_at)->toBeNull()
+        ->and($contact->owner_id)->toBe($manager->id);
+
+    session()->forget('toast');
+
+    $this->get(route('contacts.index'))
+        ->assertOk()
+        ->assertDontSee('Pending Manager Contact');
+});
+
+it('lets admin approve a manager-created contact', function () {
+    $manager = makeManagerOnTeam($this->user->current_team_id);
+    $contact = Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'owner_id' => $manager->id,
+        'name' => 'Approval Needed',
+        'email' => 'approval-needed@example.com',
+        'approval_status' => 'pending',
+        'approved_by' => null,
+        'approved_at' => null,
+    ]);
+
+    $this->get(route('contacts.pending'))
+        ->assertOk()
+        ->assertSee('Approval Needed');
+
+    $this->post(route('contacts.approve', $contact))->assertRedirect();
+
+    $contact->refresh();
+
+    expect($contact->approval_status)->toBe('approved')
+        ->and($contact->approved_by)->toBe($this->user->id)
+        ->and($contact->approved_at)->not->toBeNull();
+});
+
+it('shows added and approved user names in the contacts table', function () {
+    $manager = makeManagerOnTeam($this->user->current_team_id);
+    $manager->forceFill(['name' => 'Manager Added User'])->save();
+    $this->user->forceFill(['name' => 'Admin Approved User'])->save();
+
+    Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'owner_id' => $manager->id,
+        'name' => 'Visible Approved Contact',
+        'approval_status' => 'approved',
+        'approved_by' => $this->user->id,
+        'approved_at' => now(),
+    ]);
+
+    $this->get(route('contacts.index'))
+        ->assertOk()
+        ->assertSee('Added by')
+        ->assertSee('Approved by')
+        ->assertSee('Manager Added User')
+        ->assertSee('Admin Approved User');
+});
+
+it('lets super admin approve a manager-created contact', function () {
+    $superAdmin = makeUser(['role' => \App\Support\Roles::SUPER_ADMIN]);
+    $manager = makeManagerOnTeam($this->user->current_team_id);
+    $contact = Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'owner_id' => $manager->id,
+        'name' => 'Super Approval Needed',
+        'approval_status' => 'pending',
+        'approved_by' => null,
+        'approved_at' => null,
+    ]);
+
+    $this->actingAs($superAdmin)
+        ->post(route('contacts.approve', $contact))
+        ->assertRedirect();
+
+    $contact->refresh();
+
+    expect($contact->approval_status)->toBe('approved')
+        ->and($contact->approved_by)->toBe($superAdmin->id)
+        ->and($contact->approved_at)->not->toBeNull();
+});
+
+it('blocks manager from approving manager-created contacts', function () {
+    $manager = makeManagerOnTeam($this->user->current_team_id);
+    $contact = Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'owner_id' => $manager->id,
+        'approval_status' => 'pending',
+        'approved_by' => null,
+        'approved_at' => null,
+    ]);
+
+    $this->actingAs($manager);
+
+    $this->get(route('contacts.pending'))->assertForbidden();
+    $this->post(route('contacts.approve', $contact))->assertForbidden();
+
+    expect($contact->fresh()->approval_status)->toBe('pending');
+});
+
 it('shows a contact', function () {
     $c = Contact::factory()->create(['team_id' => $this->user->current_team_id]);
     $this->get(route('contacts.show', $c))->assertOk()->assertSee($c->name);

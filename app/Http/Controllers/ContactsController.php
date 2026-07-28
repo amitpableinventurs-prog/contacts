@@ -93,7 +93,7 @@ class ContactsController extends Controller
 
         $perPage = 25;
 
-        $query = Contact::where('team_id', $teamId)->with(['group', 'tags', 'owner']);
+        $query = Contact::where('team_id', $teamId)->with(['group', 'tags', 'owner', 'approvedBy']);
 
         $number = trim((string) $request->input('number'));
 
@@ -564,7 +564,7 @@ class ContactsController extends Controller
     }
 
     // ------------------------------------------------------------------
-    // Approval workflow (Clerk submits → Manager approves/rejects)
+    // Approval workflow (Manager submits -> Admin/Super Admin approves/rejects)
     // ------------------------------------------------------------------
 
     public function pending(): \Illuminate\View\View

@@ -265,6 +265,7 @@
                             <x-ui.table-head class="hidden lg:table-cell">Category</x-ui.table-head>
                             <x-ui.table-head class="hidden xl:table-cell">Tags</x-ui.table-head>
                             <x-ui.table-head class="hidden xl:table-cell">Added by</x-ui.table-head>
+                            <x-ui.table-head class="hidden xl:table-cell">Approved by</x-ui.table-head>
                             <x-ui.table-head class="w-28"></x-ui.table-head>
                             <x-ui.table-head class="w-10"></x-ui.table-head>
                         </x-ui.table-row>
@@ -364,6 +365,9 @@
                                 <x-ui.table-cell class="hidden xl:table-cell text-sm text-muted-foreground">
                                     {{ $contact->owner?->name ?? '—' }}
                                 </x-ui.table-cell>
+                                <x-ui.table-cell class="hidden xl:table-cell text-sm text-muted-foreground">
+                                    {{ $contact->approvedBy?->name ?? '-' }}
+                                </x-ui.table-cell>
                                 <x-ui.table-cell>
                                     @php
                                         $telNumber = $contact->phone ?: $contact->number;
@@ -453,4 +457,3 @@
         @endpush
     @endif
 </x-app-layout>
-

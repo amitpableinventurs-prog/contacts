@@ -30,3 +30,12 @@ function makeClerkOnTeam(int $teamId): \App\Models\User
 
     return $clerk->fresh();
 }
+
+function makeManagerOnTeam(int $teamId): \App\Models\User
+{
+    $manager = \App\Models\User::factory()->create(['role' => \App\Support\Roles::MANAGER]);
+    $manager->teams()->syncWithoutDetaching([$teamId => ['role' => 'member']]);
+    $manager->forceFill(['current_team_id' => $teamId])->save();
+
+    return $manager->fresh();
+}

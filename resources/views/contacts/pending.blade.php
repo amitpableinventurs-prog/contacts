@@ -68,6 +68,7 @@
                                     </div>
 
                                     {{-- Actions --}}
+                                    @can('approve-contacts')
                                     <div class="flex items-center gap-2 shrink-0">
                                         <a href="{{ route('contacts.show', $contact) }}" class="inline-flex h-8 items-center gap-1 rounded-md border border-input bg-background px-3 text-xs font-medium hover:bg-accent transition-colors">
                                             View
@@ -85,6 +86,7 @@
                                             </button>
                                         </form>
                                     </div>
+                                    @endcan
 
                                 </div>
                             </x-ui.card-content>
