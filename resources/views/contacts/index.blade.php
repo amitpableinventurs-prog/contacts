@@ -318,6 +318,8 @@
                                                     <span style="font-size:10px;background:#450a0a;color:#fff;padding:1px 5px;border-radius:4px;font-weight:700;border:1px solid #fecaca;">BANNED</span>
                                                 @elseif ($contact->status === 'suspended')
                                                     <span style="font-size:10px;background:#fed7aa;color:#7c2d12;padding:1px 5px;border-radius:4px;font-weight:600;">SUSPENDED</span>
+                                                @elseif ($contact->approval_status === 'pending')
+                                                    <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:4px;font-weight:700;border:1px solid #fcd34d;">PENDING</span>
                                                 @elseif ($contact->rating > 0)
                                                     <span style="font-size:11px;">
                                                         @for ($i = 1; $i <= 5; $i++)<span style="color:{{ $i <= (int)$contact->rating ? '#f59e0b' : '#d1d5db' }};">★</span>@endfor

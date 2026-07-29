@@ -133,9 +133,7 @@ class ContactsController extends Controller
             $query->whereRaw('1 = 0');
         }
 
-        $query->where(function ($q) {
-            $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
-        });
+        $this->scopeVisibleContactsForList($query, $user);
 
         $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
         $groups       = $hasAdvancedSearch ? Group::where('team_id', $teamId)->orderBy('name')->get() : collect();
@@ -175,7 +173,7 @@ class ContactsController extends Controller
         }
 
         return response()->json(
-            Contact::where('team_id', $teamId)
+            tap(Contact::where('team_id', $teamId), fn ($query) => $this->scopeVisibleContactsForList($query, $user))
                 ->where(fn ($query) => $isClerk
                     ? $query
                         ->where('phone', 'like', "%{$q}%")
@@ -189,6 +187,40 @@ class ContactsController extends Controller
                 ->limit(10)
                 ->get(['id', 'name', 'phone', 'email'])
         );
+    }
+
+    /**
+     * Main/search lists show approved contacts to normal viewers. Managers also
+     * see only their own pending submissions until Admin/Super Admin reviews
+     * them; after approval/rejection those submissions leave the manager queue.
+     */
+    private function scopeVisibleContactsForList($query, User $user): void
+    {
+        if ($user->isManager()) {
+            $query->where(function ($visible) use ($user) {
+                $visible
+                    ->where(function ($pending) use ($user) {
+                        $pending->where('approval_status', 'pending')
+                            ->where('owner_id', $user->id);
+                    })
+                    ->orWhere(function ($approved) use ($user) {
+                        $approved->where(function ($status) {
+                            $status->whereNull('approval_status')
+                                ->orWhere('approval_status', '!=', 'pending');
+                        })->where(function ($owner) use ($user) {
+                            $owner->whereNull('owner_id')
+                                ->orWhere('owner_id', '!=', $user->id);
+                        });
+                    });
+            });
+
+            return;
+        }
+
+        $query->where(function ($status) {
+            $status->whereNull('approval_status')
+                ->orWhere('approval_status', '!=', 'pending');
+        });
     }
 
     // ------------------------------------------------------------------

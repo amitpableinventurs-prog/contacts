@@ -54,10 +54,45 @@ it('requires approval when a manager adds a contact', function () {
 
     $this->get(route('contacts.index'))
         ->assertOk()
-        ->assertDontSee('Pending Manager Contact');
+        ->assertSee('Pending Manager Contact');
 });
 
-it('lets admin approve a manager-created contact', function () {
+it('hides manager pending contacts from admin super admin and clerk main lists', function () {
+    $manager = makeManagerOnTeam($this->user->current_team_id);
+    Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'owner_id' => $manager->id,
+        'name' => 'Only Manager Pending',
+        'phone' => '15550001112',
+        'approval_status' => 'pending',
+        'approved_by' => null,
+        'approved_at' => null,
+    ]);
+
+    $this->get(route('contacts.index'))
+        ->assertOk()
+        ->assertDontSee('Only Manager Pending');
+
+    $superAdmin = makeUser(['role' => \App\Support\Roles::SUPER_ADMIN]);
+    $superAdmin->teams()->syncWithoutDetaching([$this->user->current_team_id => ['role' => 'member']]);
+    $superAdmin->forceFill(['current_team_id' => $this->user->current_team_id])->save();
+
+    $this->actingAs($superAdmin)
+        ->get(route('contacts.index'))
+        ->assertOk()
+        ->assertDontSee('Only Manager Pending');
+
+    $clerk = makeClerkOnTeam($this->user->current_team_id);
+
+    $this->actingAs($clerk)
+        ->get(route('contacts.index', ['number' => '15550001112']))
+        ->assertOk()
+        ->assertDontSee('Only Manager Pending');
+
+    expect($this->getJson(route('contacts.autocomplete', ['q' => '15550001112']))->json())->toHaveCount(0);
+});
+
+it('lets admin approve a manager-created contact and removes it from manager list', function () {
     $manager = makeManagerOnTeam($this->user->current_team_id);
     $contact = Contact::factory()->create([
         'team_id' => $this->user->current_team_id,
@@ -80,6 +115,16 @@ it('lets admin approve a manager-created contact', function () {
     expect($contact->approval_status)->toBe('approved')
         ->and($contact->approved_by)->toBe($this->user->id)
         ->and($contact->approved_at)->not->toBeNull();
+
+    // Drain the "approved" toast flashed by the approve redirect above — it
+    // otherwise bleeds into the very next request and contains the contact's
+    // name, which would falsely trip the assertDontSee below.
+    $this->get(route('contacts.pending'));
+
+    $this->actingAs($manager)
+        ->get(route('contacts.index'))
+        ->assertOk()
+        ->assertDontSee('Approval Needed');
 });
 
 it('shows added and approved user names in the contacts table', function () {
