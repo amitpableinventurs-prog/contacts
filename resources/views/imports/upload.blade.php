@@ -21,7 +21,7 @@
                     <div class="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
                         <p class="font-medium text-foreground">Supported destination fields</p>
                         <p>{{ implode(' · ', array_keys($fields)) }}</p>
-                        <p>Use a Category column for per-contact category; tags should be comma-separated in a single column.</p>
+                        <p>Use a Category column for per-contact category; tags should be comma-separated in a single column. Birthday format: YYYY-MM-DD. Rating: 0-5. Lifecycle Stage: lead, prospect, customer, partner, vendor. Status: active, suspended, banned.</p>
                     </div>
                 </x-ui.card-content>
                 <x-ui.card-footer class="justify-between">

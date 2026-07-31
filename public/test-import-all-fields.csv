@@ -1,0 +1,7 @@
+Name,Email,Phone,Country,Company,Job Title,Website,Address,City,Birthday,Gender,Category,Rating,Lifecycle Stage,Status,Notes,Comment,Facebook,Twitter,LinkedIn,Tags
+John Doe,john@example.com,+919876543210,IN,Tech Corp,Developer,https://johndoe.com,123 Main St,Mumbai,1990-01-15,Male,VIP Customers,4.5,customer,active,Interested in new product,Approved by sales,johndoe,@johndoe,johndoe,vip,tech
+Jane Smith,jane@example.com,+14155550142,US,Design Studio,Designer,https://janesmith.com,456 Oak Ave,New York,1992-06-20,Female,Partners,3.0,lead,active,Follow up next week,Design lead contact,janesmith,@jane_design,janesmith,design,lead
+Bob Wilson,bob@example.com,+447700900123,GB,Global Ltd,Manager,,789 Pine Rd,London,1985-03-10,Male,Suppliers,5.0,partner,active,Existing client,Key account manager,bobwilson,@bobw,bobwilson,partner,vip
+Alice Brown,alice@example.com,+6591234567,SG,Sales Co,Executive,https://alicebrown.com,321 Beach Rd,Singapore,1988-11-25,Female,VIP Customers,2.5,prospect,suspended,Call back later,Needs manager approval,aliceb,@alice_b,alicebrown,prospect
+Charlie Green,charlie@example.com,+61400123456,AU,Green Corp,CEO,https://charlie.com,,Sydney,1975-07-30,Male,,4.0,customer,active,Long-term partner,,charliegreen,@charlie_g,charlie,ceo,partner
+
