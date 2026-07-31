@@ -133,10 +133,9 @@
                     @endcan
                 </x-ui.dropdown-menu>
             </div>
-        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {{-- Left rail --}}
+            {{-- Left rail profile --}}
             <x-ui.card class="lg:col-span-1 h-fit">
                 <x-ui.card-content class="p-6 space-y-4">
                     <div class="flex flex-col items-center text-center">
@@ -145,14 +144,11 @@
                         @if ($contact->job_title || $contact->company)
                             <p class="text-sm text-muted-foreground">{{ collect([$contact->job_title, $contact->company])->filter()->join(' · ') }}</p>
                         @endif
-
-                        {{-- Status badge --}}
                         @if ($contact->status === 'suspended')
                             <span class="mt-1 inline-flex items-center rounded-md bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-800">Suspended</span>
                         @elseif ($contact->status === 'banned')
                             <span class="mt-1 inline-flex items-center rounded-md bg-red-700 px-2 py-0.5 text-xs font-semibold text-white">Banned</span>
                         @endif
-
                         <div class="mt-2 flex flex-wrap items-center justify-center gap-1.5">
                             @if ($contact->lifecycle_stage)
                                 <x-ui.badge variant="secondary">{{ ucfirst($contact->lifecycle_stage) }}</x-ui.badge>
@@ -164,9 +160,7 @@
                                 </x-ui.badge>
                             @endif
                         </div>
-                    </div>
 
-                    {{-- Star rating display + quick rate --}}
                     <div class="text-center">
                         @php $r = (float)($contact->rating ?? 0); @endphp
                         <div class="flex items-center justify-center gap-0.5 mb-1">
@@ -204,8 +198,11 @@
                         @if ($contact->city)
                             <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">City</dt><dd>{{ $contact->city }}</dd></div>
                         @endif
+                        @if ($contact->gender)
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Gender</dt><dd>{{ ucfirst($contact->gender) }}</dd></div>
+                        @endif
                         @if ($contact->birthday)
-                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Birthday</dt><dd>{{ $contact->birthday->format('M j, Y') }}</dd></div>
+                            <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Birthday</dt><dd>{{ $contact->birthday->format('M j, Y') }} <span class="text-muted-foreground">({{ $contact->birthday->age }} years old)</span></dd></div>
                         @endif
                         <div><dt class="text-xs uppercase tracking-wide text-muted-foreground">Last contacted</dt><dd>{{ $contact->last_contacted_at?->diffForHumans() ?? '—' }}</dd></div>
                         @if ($contact->owner)
@@ -230,7 +227,6 @@
                                     <x-ui.badge variant="outline">{{ $tag->name }}</x-ui.badge>
                                 @endforeach
                             </div>
-                        </div>
                     @endif
 
                     @if ($contact->facebook || $contact->twitter || $contact->linkedin)
@@ -242,7 +238,6 @@
                                 @if ($contact->linkedin) <div>💼 {{ $contact->linkedin }}</div> @endif
                                 @if ($contact->facebook) <div>📘 {{ $contact->facebook }}</div> @endif
                             </div>
-                        </div>
                     @endif
                 </x-ui.card-content>
             </x-ui.card>
@@ -303,269 +298,22 @@
                         </x-ui.card>
                     </x-ui.tabs-content>
 
-                    {{-- Edit History --}}
-                    <x-ui.tabs-content value="history">
-                        <x-ui.card>
-                            <x-ui.card-header>
-                                <x-ui.card-title>Edit History</x-ui.card-title>
-                                <x-ui.card-description>Last 5 changes to this contact.</x-ui.card-description>
-                            </x-ui.card-header>
-                            <x-ui.card-content class="p-0">
-                                @if ($contact->editHistories->isEmpty())
-                                    <p class="text-sm text-muted-foreground py-10 text-center">No edits recorded yet.</p>
-                                @else
-                                    <ul class="divide-y">
-                                        @foreach ($contact->editHistories as $history)
-                                            <li class="p-4 space-y-2">
-                                                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                                                    <span class="font-medium text-foreground">{{ $history->user?->name ?? 'Unknown user' }}</span>
-                                                    <span title="{{ $history->created_at->format('d M Y H:i:s') }}">{{ $history->created_at->format('d M Y, h:i A') }}</span>
-                                                </div>
-                                                <ul class="space-y-1">
-                                                    @foreach ($history->changed_fields as $field => $change)
-                                                        <li class="text-xs flex flex-wrap items-baseline gap-x-1.5">
-                                                            <span class="font-semibold capitalize">{{ str_replace('_', ' ', $field) }}:</span>
-                                                            @if ($change['from'])
-                                                                <span class="text-red-600 line-through">{{ $change['from'] }}</span>
-                                                                <span class="text-muted-foreground">→</span>
-                                                            @endif
-                                                            <span class="text-green-700">{{ $change['to'] ?? '(cleared)' }}</span>
-                                                        </li>
-                                                    @endforeach
-                                                </ul>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @endif
-                            </x-ui.card-content>
-                        </x-ui.card>
-                    </x-ui.tabs-content>
-
-                    {{-- Notes: everyone (including Clerks) can view and add; only Manager+ can delete --}}
+                    {{-- Notes --}}
                     <x-ui.tabs-content value="notes">
-                        <div class="space-y-3">
-                            {{-- Add note form --}}
-                            @can('addNote', $contact)
+                        <div class="space-y-3">@can('addNote', $contact)
                             <x-ui.card>
-                                <x-ui.card-header>
-                                    <x-ui.card-title>
-                                        @if (auth()->user()->isClerk())
-                                            Add or edit your notes
-                                        @else
-                                            Add note
-                                        @endif
-                                    </x-ui.card-title>
-                                    @if (auth()->user()->isClerk())
-                                        <x-ui.card-description>You can add notes and edit your own notes to track interactions and observations.</x-ui.card-description>
-                                    @endif
-                                </x-ui.card-header>
+                                <x-ui.card-header><x-ui.card-title>@if (auth()->user()->isClerk())Add or edit your notes @else Add note @endif</x-ui.card-title></x-ui.card-header>
                                 <x-ui.card-content>
-                                    <form method="POST" action="{{ route('contacts.notes.store', $contact) }}" class="space-y-3">
-                                        @csrf
+                                    <form method="POST" action="{{ route('contacts.notes.store', $contact) }}" class="space-y-3">@csrf
                                         <x-ui.textarea name="note_html" rows="3" placeholder="Add a note about this contact..." required></x-ui.textarea>
-                                        @error('note_html') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                                         <x-ui.button type="submit" size="sm">Save note</x-ui.button>
                                     </form>
                                 </x-ui.card-content>
-                            </x-ui.card>
-                            @endcan
-
-                            {{-- Quick notes field (plain text column) --}}
+                            </x-ui.card>@endcan
                             @if ($contact->getAttributes()['notes'] ?? null)
-                                <x-ui.card>
-                                    <x-ui.card-header><x-ui.card-title class="text-sm">Quick notes</x-ui.card-title></x-ui.card-header>
-                                    <x-ui.card-content>
-                                        <p class="text-sm whitespace-pre-line leading-relaxed">{{ $contact->getAttributes()['notes'] }}</p>
-                                    </x-ui.card-content>
-                                </x-ui.card>
-                            @endif
+                                <x-ui.card><x-ui.card-header><x-ui.card-title class="text-sm">Quick notes</x-ui.card-title></x-ui.card-header>
+                                <x-ui.card-content><p class="text-sm whitespace-pre-line
 
-                            {{-- Relational notes --}}
-                            @forelse ($contact->contactNotes->sortByDesc('created_at') as $note)
-                                <x-ui.card x-data="{ editing: false }">
-                                    <x-ui.card-content class="p-4">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                                                <x-ui.avatar :name="$note->author?->name ?? 'User'" size="xs" />
-                                                <span>{{ $note->author?->name ?? 'Unknown' }}</span>
-                                                <span>·</span>
-                                                <span>{{ $note->created_at->diffForHumans() }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                @can('editNote', $note)
-                                                    <button type="button" @click="editing = !editing" class="text-muted-foreground hover:text-foreground" title="Edit note">
-                                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                                    </button>
-                                                @endcan
-                                                @can('manage', $contact)
-                                                    <form method="POST" action="{{ route('contacts.notes.destroy', [$contact, $note]) }}">
-                                                        @csrf @method('DELETE')
-                                                        <button type="submit" class="text-muted-foreground hover:text-destructive" title="Delete note">
-                                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                        </button>
-                                                    </form>
-                                                @endcan
-                                            </div>
-                                        </div>
-                                        <p x-show="!editing" class="text-sm whitespace-pre-line">{!! nl2br(e($note->note_html)) !!}</p>
-                                        @can('editNote', $note)
-                                            <form method="POST" action="{{ route('contacts.notes.update', [$contact, $note]) }}" x-show="editing" x-cloak class="space-y-2">
-                                                @csrf
-                                                @method('PATCH')
-                                                <x-ui.textarea name="note_html" rows="3" required>{{ $note->note_html }}</x-ui.textarea>
-                                                @error('note_html') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
-                                                <div class="flex gap-2">
-                                                    <x-ui.button type="submit" size="sm">Save</x-ui.button>
-                                                    <button type="button" @click="editing = false" class="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors hover:bg-accent focus-ring">Cancel</button>
-                                                </div>
-                                            </form>
-                                        @endcan
-                                    </x-ui.card-content>
-                                </x-ui.card>
-                            @empty
-                                <p class="text-sm text-muted-foreground text-center py-8">No notes yet.</p>
-                            @endforelse
-                        </div>
-                    </x-ui.tabs-content>
-
-                    {{-- Description --}}
-                    <x-ui.tabs-content value="description">
-                        <x-ui.card>
-                            <x-ui.card-content class="p-6">
-                                @if ($contact->description_html)
-                                    <div class="prose prose-sm max-w-none">{!! $contact->description_html !!}</div>
-                                @else
-                                    <p class="text-sm text-muted-foreground italic">No description added. Use the Edit form to add one.</p>
-                                @endif
-                            </x-ui.card-content>
-                        </x-ui.card>
-                    </x-ui.tabs-content>
-
-                    {{-- Files --}}
-                    <x-ui.tabs-content value="files">
-                        <div class="space-y-3">
-                            @can('manage', $contact)
-                                <x-ui.card>
-                                    <x-ui.card-header><x-ui.card-title>Upload file</x-ui.card-title></x-ui.card-header>
-                                    <x-ui.card-content>
-                                        <form method="POST" action="{{ route('contacts.files.store', $contact) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3">
-                                            @csrf
-                                            <div class="flex-1 space-y-1.5">
-                                                <input type="file" name="file" required class="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent" />
-                                                @error('file') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
-                                            </div>
-                                            <x-ui.button type="submit" size="sm">Upload</x-ui.button>
-                                        </form>
-                                    </x-ui.card-content>
-                                </x-ui.card>
-                            @endcan
-
-                            @forelse ($contact->files->sortByDesc('created_at') as $file)
-                                <x-ui.card>
-                                    <x-ui.card-content class="p-4 flex items-center gap-3">
-                                        <div class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-muted">
-                                            <svg class="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-medium truncate">{{ $file->file_name }}</p>
-                                            <p class="text-xs text-muted-foreground">{{ number_format($file->size_bytes / 1024, 1) }} KB · {{ $file->created_at->diffForHumans() }}</p>
-                                        </div>
-                                        <a href="{{ asset('storage/'.$file->file_path) }}" download="{{ $file->file_name }}"
-                                           class="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded border border-input hover:bg-accent">Download</a>
-                                        @can('manage', $contact)
-                                            <form method="POST" action="{{ route('contacts.files.destroy', [$contact, $file]) }}" onsubmit="return confirm('Delete file?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="text-muted-foreground hover:text-destructive">
-                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                                </button>
-                                            </form>
-                                        @endcan
-                                    </x-ui.card-content>
-                                </x-ui.card>
-                            @empty
-                                <p class="text-sm text-muted-foreground text-center py-8">No files uploaded.</p>
-                            @endforelse
-                        </div>
-                    </x-ui.tabs-content>
-
-                    {{-- Gallery --}}
-                    <x-ui.tabs-content value="gallery">
-                        <div class="space-y-3">
-                            @can('manage', $contact)
-                                <x-ui.card>
-                                    <x-ui.card-header><x-ui.card-title>Upload images</x-ui.card-title></x-ui.card-header>
-                                    <x-ui.card-content>
-                                        <form method="POST" action="{{ route('contacts.gallery.store', $contact) }}" enctype="multipart/form-data" class="flex flex-wrap items-end gap-3">
-                                            @csrf
-                                            <div class="flex-1 space-y-1.5">
-                                                <input type="file" name="images[]" multiple accept="image/*" required class="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent" />
-                                                @error('images') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
-                                            </div>
-                                            <x-ui.button type="submit" size="sm">Upload</x-ui.button>
-                                        </form>
-                                    </x-ui.card-content>
-                                </x-ui.card>
-                            @endcan
-
-                            @if ($contact->galleryImages->isNotEmpty())
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    @foreach ($contact->galleryImages->sortByDesc('created_at') as $image)
-                                        <div class="relative group rounded-lg overflow-hidden border border-input bg-muted aspect-square">
-                                            <img src="{{ asset('storage/'.$image->image_path) }}" alt="{{ $image->image_name }}" class="w-full h-full object-cover" />
-                                            @can('manage', $contact)
-                                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <form method="POST" action="{{ route('contacts.gallery.destroy', [$contact, $image]) }}" onsubmit="return confirm('Delete image?')">
-                                                        @csrf @method('DELETE')
-                                                        <button type="submit" class="bg-destructive text-destructive-foreground rounded-md px-3 py-1.5 text-xs font-medium">Delete</button>
-                                                    </form>
-                                                </div>
-                                            @endcan
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <p class="text-sm text-muted-foreground text-center py-8">No images in gallery.</p>
-                            @endif
-                        </div>
-                    </x-ui.tabs-content>
-
-                    {{-- Custom fields --}}
-                    <x-ui.tabs-content value="custom">
-                        <x-ui.card>
-                            <x-ui.card-content class="p-6">
-                                @if (!empty($contact->custom_fields))
-                                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                                        @foreach ($contact->custom_fields as $key => $value)
-                                            <div>
-                                                <dt class="text-xs uppercase tracking-wide text-muted-foreground">{{ $key }}</dt>
-                                                <dd>{{ is_scalar($value) ? $value : json_encode($value) }}</dd>
-                                            </div>
-                                        @endforeach
-                                    </dl>
-                                @else
-                                    <p class="text-sm text-muted-foreground italic">No custom fields set.</p>
-                                @endif
-                            </x-ui.card-content>
-                        </x-ui.card>
-                    </x-ui.tabs-content>
-                </x-ui.tabs>
-            </div>
-        </div>
-    </div>
-
-    @if (auth()->user()->isSuperAdmin())
-        @push('scripts')
-        <script>
-            // Super Admin's delete action requires the export/import PIN —
-            // validated again server-side, this just avoids a round trip.
-            function confirmDeleteWithPin(form, message) {
-                if (!confirm(message)) return false;
-                const pin = prompt('Enter PIN to confirm deletion:');
-                if (!pin) return false;
-                form.querySelector('input[name="pin"]').value = pin;
-                return true;
-            }
-        </script>
-        @endpush
-    @endif
-</x-app-layout>
+<read_file>
+<path>d:/xampp_lite/xampp_lite_8_3/www/laracontact/resources/views/contacts/show.blade.php</path>
+</read_file>

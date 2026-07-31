@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContactsController extends Controller
 {
@@ -986,9 +987,7 @@ class ContactsController extends Controller
         return back()->with('toast', ['type' => 'success', 'message' => $label]);
     }
 
-    // ------------------------------------------------------------------
-    // AI: Enrich from text
-    // ------------------------------------------------------------------
+
 
     public function enrich(Request $request, AnthropicClient $ai): JsonResponse
     {
@@ -1027,10 +1026,10 @@ class ContactsController extends Controller
             'phone_country'        => ['nullable', 'string', 'size:2', 'alpha'],
             'company'              => ['nullable', 'string', 'max:255'],
             'job_title'            => ['nullable', 'string', 'max:255'],
-            'website'              => ['nullable', 'url', 'max:255'],
+'website'              => ['nullable', 'url', 'max:255'],
             'address'              => ['nullable', 'string', 'max:500'],
-            'city'                 => ['nullable', 'string', 'max:120'],
             'birthday'             => ['nullable', 'date'],
+            'gender'               => ['nullable', 'in:male,female,others'],
             'lifecycle_stage'      => ['nullable', 'in:lead,prospect,customer,partner,vendor'],
             'group_id'             => ['nullable', 'exists:groups,id'],
             'rating'               => ['nullable', 'numeric', 'min:0', 'max:5'],

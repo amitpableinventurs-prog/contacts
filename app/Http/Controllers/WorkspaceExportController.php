@@ -50,14 +50,14 @@ class WorkspaceExportController extends Controller
 
             $fp = fopen('php://output', 'w');
 
-            fputcsv($fp, ['Name', 'Email', 'Phone', 'Phone Country', 'City', 'Birthday', 'Company', 'Job Title', 'Website', 'Address', 'Status', 'Rating', 'Lifecycle Stage', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Category', 'Tags', 'Custom Fields', 'Owner', 'Created At', 'Last Contacted']);
+            fputcsv($fp, ['Name', 'Email', 'Phone', 'Phone Country', 'City', 'Birthday', 'Gender','Company', 'Job Title', 'Website', 'Address', 'Status', 'Rating', 'Lifecycle Stage', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Category', 'Tags', 'Custom Fields', 'Owner', 'Created At', 'Last Contacted']);
 
             $query = Contact::where('team_id', $team->id)
                 ->where(function ($q) {
                     $q->whereNull('approval_status')->orWhere('approval_status', '!=', 'pending');
                 })
                 ->with('tags:id,name')
-                ->select(['id', 'name', 'email', 'phone', 'phone_country', 'city', 'birthday', 'company', 'job_title', 'website', 'address', 'status', 'rating', 'notes', 'admin_comment', 'facebook', 'twitter', 'linkedin', 'lifecycle_stage', 'group_id', 'owner_id', 'custom_fields', 'created_at', 'last_contacted_at']);
+                ->select(['id', 'name', 'email', 'phone', 'phone_country', 'city', 'birthday', 'gender', 'company', 'job_title', 'website', 'address', 'status', 'rating', 'notes', 'admin_comment', 'facebook', 'twitter', 'linkedin', 'lifecycle_stage', 'group_id', 'owner_id', 'custom_fields', 'created_at', 'last_contacted_at']);
 
             $rows = 0;
             foreach ($query->lazyById(1000) as $c) {
@@ -72,6 +72,7 @@ class WorkspaceExportController extends Controller
                     $c->phone_country ?? '',
                     $c->city ?? '',
                     $c->birthday?->format('Y-m-d') ?? '',
+                    $c->gender ?? '',
                     $c->company ?? '',
                     $c->job_title ?? '',
                     $c->website ?? '',

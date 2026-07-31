@@ -28,7 +28,6 @@ $canEditNotes = $canEditNotes ?? $canEdit;
                                class="block w-full max-w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent disabled:opacity-50 disabled:cursor-not-allowed" />
                         <p class="text-xs text-muted-foreground">JPG, PNG up to 2 MB</p>
                     </div>
-                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5 sm:col-span-2">
@@ -51,8 +50,34 @@ $canEditNotes = $canEditNotes ?? $canEdit;
                     </div>
 
                     <div class="space-y-1.5">
+                        <x-ui.label for="company">Company</x-ui.label>
+                        <x-ui.input id="company" name="company" value="{{ old('company', $contact?->company) }}" :disabled="!$canEdit" />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <x-ui.label for="job_title">Job Title</x-ui.label>
+                        <x-ui.input id="job_title" name="job_title" value="{{ old('job_title', $contact?->job_title) }}" :disabled="!$canEdit" />
+                    </div>
+
+                    <div class="space-y-1.5">
                         <x-ui.label for="city">City</x-ui.label>
                         <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" :disabled="!$canEdit" />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <x-ui.label for="birthday">Birthday</x-ui.label>
+                        <x-ui.input id="birthday" name="birthday" type="date" value="{{ old('birthday', $contact?->birthday?->format('Y-m-d')) }}" :disabled="!$canEdit" />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <x-ui.label for="gender">Gender</x-ui.label>
+                        <select id="gender" name="gender" class="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-ring disabled:opacity-50 disabled:cursor-not-allowed" {{ !$canEdit ? 'disabled' : '' }}>
+                            <option value="">Select gender</option>
+                            <option value="male" @selected(old('gender', $contact?->gender) === 'male')>Male</option>
+                            <option value="female" @selected(old('gender', $contact?->gender) === 'female')>Female</option>
+                            <option value="others" @selected(old('gender', $contact?->gender) === 'others')>Others</option>
+                        </select>
+                        @error('gender') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1.5 sm:col-span-2">
@@ -275,7 +300,6 @@ $canEditNotes = $canEditNotes ?? $canEdit;
                             <span class="text-xs font-medium text-primary" x-text="fake ? 'Suggested (regex)' : '✨ Claude suggests'"></span>
                             <button type="button" @click="apply" class="text-xs text-primary hover:underline {{ !$canEdit ? 'pointer-events-none opacity-50' : '' }}">Apply all</button>
                         </div>
-                    </div>
                     <div class="flex flex-wrap gap-2">
                         @foreach ($tags as $tag)
                             <label class="cursor-pointer relative {{ !$canEdit ? 'opacity-50 pointer-events-none' : '' }}">
@@ -291,7 +315,6 @@ $canEditNotes = $canEditNotes ?? $canEdit;
             </x-ui.card-content>
         </x-ui.card>
     </div>
-</div>
 
 <div class="mt-6 flex items-center justify-end gap-2">
     <a href="{{ url()->previous() }}" class="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-4 text-sm font-medium shadow-sm transition-colors hover:bg-accent focus-ring">Cancel</a>
@@ -314,10 +337,6 @@ $canEditNotes = $canEditNotes ?? $canEdit;
 function htmlEditor(fieldName) {
     return {
         init() {
-            // A completely empty contenteditable (no child nodes at all) has no
-            // line box for the browser to anchor a caret to, so clicking into it
-            // on a new contact can silently fail to accept typing. Seed a <br>
-            // so there's always somewhere for the cursor to land.
             this.$refs.editor.innerHTML = this.$refs.hidden.value || '<br>';
         },
         exec(cmd) {
@@ -349,11 +368,8 @@ function htmlEditor(fieldName) {
         if (c && c.iso2) countryField.value = c.iso2;
     };
     input.addEventListener('countrychange', syncCountry);
-    // A legacy "+xx…" value can override the initial country during init.
     syncCountry();
 
-    // Store bare digits — spaces from as-you-type formatting would break
-    // the LIKE-based phone search.
     const form = input.closest('form');
     if (form) {
         form.addEventListener('submit', function () {

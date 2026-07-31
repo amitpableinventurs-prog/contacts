@@ -17,7 +17,7 @@ class Contact extends Model
         'team_id', 'group_id', 'owner_id',
         'name', 'email', 'phone', 'phone_digits', 'phone_country',
         'company', 'job_title', 'website', 'address', 'city',
-        'photo', 'birthday', 'lifecycle_stage',
+        'photo', 'birthday', 'gender', 'lifecycle_stage',
         'facebook', 'twitter', 'linkedin',
         'notes', 'admin_comment', 'custom_fields', 'last_contacted_at',
         'approval_status', 'approved_by', 'approved_at',
