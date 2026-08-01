@@ -28,11 +28,12 @@ $canEditNotes = $canEditNotes ?? $canEdit;
                                class="block w-full max-w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border file:border-input file:bg-background file:px-3 file:py-1 file:text-sm file:font-medium file:cursor-pointer hover:file:bg-accent disabled:opacity-50 disabled:cursor-not-allowed" />
                         <p class="text-xs text-muted-foreground">JPG, PNG up to 2 MB</p>
                     </div>
+                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5 sm:col-span-2">
                         <x-ui.label for="phone">Phone / Number <span class="text-destructive">*</span></x-ui.label>
-                        <input type="hidden" id="phone_country" name="phone_country" value="{{ old('phone_country', $contact?->phone_country ?: 'in') }}" />
+                        <input type="hidden" id="country" name="country" value="{{ old('country', $contact?->country ?: 'in') }}" />
                         <x-ui.input id="phone" name="phone" value="{{ old('phone', $contact?->phone ?: $contact?->number) }}" placeholder="98765 43210" required autofocus :disabled="!$canEdit" />
                         @error('phone') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
@@ -62,6 +63,18 @@ $canEditNotes = $canEditNotes ?? $canEdit;
                     <div class="space-y-1.5">
                         <x-ui.label for="city">City</x-ui.label>
                         <x-ui.input id="city" name="city" value="{{ old('city', $contact?->city) }}" :disabled="!$canEdit" />
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <x-ui.label for="area">Area</x-ui.label>
+                        <x-ui.input id="area" name="area" value="{{ old('area', $contact?->area) }}" placeholder="e.g. Andheri, Indiranagar" :disabled="!$canEdit" />
+                        @error('area') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <x-ui.label for="website">Website</x-ui.label>
+                        <x-ui.input id="website" name="website" type="url" value="{{ old('website', $contact?->website) }}" placeholder="https://example.com" :disabled="!$canEdit" />
+                        @error('website') <p class="text-xs text-destructive">{{ $message }}</p> @enderror
                     </div>
 
                     <div class="space-y-1.5">
@@ -354,7 +367,7 @@ function htmlEditor(fieldName) {
 <script>
 (function () {
     const input = document.getElementById('phone');
-    const countryField = document.getElementById('phone_country');
+    const countryField = document.getElementById('country');
     if (!input || !countryField || !window.intlTelInput) return;
 
     const iti = window.intlTelInput(input, {

@@ -261,11 +261,10 @@
                                 </x-ui.table-head>
                             @endunless
                             <x-ui.table-head>Name</x-ui.table-head>
-                            <x-ui.table-head class="hidden md:table-cell">Company</x-ui.table-head>
+                            <x-ui.table-head class="hidden lg:table-cell">City</x-ui.table-head>
                             <x-ui.table-head class="hidden lg:table-cell">Category</x-ui.table-head>
                             <x-ui.table-head class="hidden xl:table-cell">Tags</x-ui.table-head>
-                            <x-ui.table-head class="hidden xl:table-cell">Added by</x-ui.table-head>
-                            <x-ui.table-head class="hidden xl:table-cell">Approved by</x-ui.table-head>
+                            <x-ui.table-head class="hidden lg:table-cell">Added date</x-ui.table-head>
                             <x-ui.table-head class="w-28"></x-ui.table-head>
                             <x-ui.table-head class="w-10"></x-ui.table-head>
                         </x-ui.table-row>
@@ -332,11 +331,11 @@
                                         </div>
                                     </a>
                                 </x-ui.table-cell>
-                                <x-ui.table-cell class="hidden md:table-cell">
-                                    @if ($contact->company)
-                                        <div class="text-sm">{{ $contact->company }}</div>
-                                        @if ($contact->job_title)
-                                            <div class="text-xs text-muted-foreground">{{ $contact->job_title }}</div>
+                                <x-ui.table-cell class="hidden lg:table-cell">
+                                    @if ($contact->city)
+                                        <div class="text-sm">{{ $contact->city }}</div>
+                                        @if ($contact->area)
+                                            <div class="text-xs text-muted-foreground">{{ $contact->area }}</div>
                                         @endif
                                     @else
                                         <span class="text-muted-foreground">—</span>
@@ -364,11 +363,13 @@
                                         @endif
                                     </div>
                                 </x-ui.table-cell>
-                                <x-ui.table-cell class="hidden xl:table-cell text-sm text-muted-foreground">
-                                    {{ $contact->owner?->name ?? '—' }}
-                                </x-ui.table-cell>
-                                <x-ui.table-cell class="hidden xl:table-cell text-sm text-muted-foreground">
-                                    {{ $contact->approvedBy?->name ?? '-' }}
+                                <x-ui.table-cell class="hidden lg:table-cell text-sm text-muted-foreground">
+                                    @if ($contact->created_at)
+                                        <div>{{ $contact->created_at->format('d M Y') }}</div>
+                                        <div class="text-xs">{{ $contact->created_at->format('h:i A') }}</div>
+                                    @else
+                                        <span>—</span>
+                                    @endif
                                 </x-ui.table-cell>
                                 <x-ui.table-cell>
                                     @php

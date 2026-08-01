@@ -305,7 +305,7 @@ it('lets super admin set the comment and shows it to every role', function () {
     $this->put(route('contacts.update', $contact), [
         'name'          => $contact->name,
         'phone'         => '9503466923',
-        'phone_country' => 'in',
+        'country' => 'in',
         'admin_comment' => 'VIP customer — handle with care.',
     ])->assertRedirect();
 
@@ -341,10 +341,10 @@ it('saves the phone country with the contact', function () {
     $this->put(route('contacts.update', $contact), [
         'name'          => $contact->name,
         'phone'         => '4155551234',
-        'phone_country' => 'us',
+        'country' => 'us',
     ])->assertRedirect();
 
-    expect($contact->fresh()->phone_country)->toBe('us');
+    expect($contact->fresh()->country)->toBe('us');
 });
 
 it('lets clerks view and add notes', function () {

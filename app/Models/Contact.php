@@ -16,7 +16,7 @@ class Contact extends Model
     protected $fillable = [
         'team_id', 'group_id', 'owner_id',
         'name', 'email', 'phone', 'phone_digits', 'phone_country',
-        'company', 'job_title', 'website', 'address', 'city',
+        'company', 'job_title', 'website', 'address', 'city', 'area',
         'photo', 'birthday', 'gender', 'lifecycle_stage',
         'facebook', 'twitter', 'linkedin',
         'notes', 'admin_comment', 'custom_fields', 'last_contacted_at',

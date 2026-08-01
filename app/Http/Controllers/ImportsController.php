@@ -29,6 +29,7 @@ class ImportsController extends Controller
         'website' => 'Website',
         'address' => 'Address',
         'city' => 'City',
+        'area' => 'Area',
         'birthday' => 'Birthday',
         'gender' => 'Gender',
         'category' => 'Category',
@@ -61,7 +62,7 @@ class ImportsController extends Controller
      */
     public function template(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $headers = ['Name', 'Email', 'Phone', 'Country', 'Company', 'Job title', 'Website', 'Address', 'City', 'Birthday', 'Gender', 'Category', 'Rating', 'Lifecycle Stage', 'Status', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Tags'];
+        $headers = ['Name', 'Email', 'Phone', 'Country', 'Company', 'Job title', 'Website', 'Address', 'City', 'Area', 'Birthday', 'Gender', 'Category', 'Rating', 'Lifecycle Stage', 'Status', 'Notes', 'Comment', 'Facebook', 'Twitter', 'LinkedIn', 'Tags'];
         $example = [
             'Ada Lovelace',
             'ada@example.com',
@@ -72,6 +73,7 @@ class ImportsController extends Controller
             'https://example.com',
             '10 Downing St, London',
             'London',
+            'Westminster',
             '1815-12-10',
             'Female',
             'VIP Customers',
@@ -190,6 +192,7 @@ class ImportsController extends Controller
                 str_contains($lower, 'title') || str_contains($lower, 'job') => 'job_title',
                 str_contains($lower, 'web') => 'website',
                 str_contains($lower, 'address') => 'address',
+                str_contains($lower, 'area') || str_contains($lower, 'neighborhood') || str_contains($lower, 'locality') => 'area',
                 str_contains($lower, 'city') || str_contains($lower, 'town') => 'city',
                 str_contains($lower, 'birth') || str_contains($lower, 'dob') || $lower === 'date of birth' => 'birthday',
                 str_contains($lower, 'category') || str_contains($lower, 'group') => 'category',

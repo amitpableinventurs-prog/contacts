@@ -112,7 +112,8 @@ class ContactsController extends Controller
                         ->orWhere('email',   'like', "%{$q}%")
                         ->orWhere('phone',   'like', "%{$q}%")
                         ->orWhere('company', 'like', "%{$q}%")
-                        ->orWhere('city',    'like', "%{$q}%");
+                        ->orWhere('city',    'like', "%{$q}%")
+                        ->orWhere('area',    'like', "%{$q}%");
                 });
             }
             if ($groupId = $request->input('group_id')) {
@@ -384,7 +385,7 @@ class ContactsController extends Controller
         }
 
         // Track which fields changed for edit history.
-        $trackFields = ['name','email','phone','company','job_title','website','address','city','notes','description_html'];
+        $trackFields = ['name','email','phone','company','job_title','website','address','city','area','notes','description_html'];
         $changed = [];
         foreach ($trackFields as $field) {
             $old = $contact->$field;
@@ -889,7 +890,7 @@ class ContactsController extends Controller
             ->get();
 
         DB::transaction(function () use ($contact, $duplicates) {
-            $fillable = ['phone', 'email', 'company', 'job_title', 'website', 'address', 'photo', 'birthday', 'lifecycle_stage', 'facebook', 'twitter', 'linkedin', 'notes', 'description_html'];
+            $fillable = ['phone', 'email', 'company', 'job_title', 'website', 'address', 'city', 'area', 'photo', 'birthday', 'lifecycle_stage', 'facebook', 'twitter', 'linkedin', 'notes', 'description_html'];
             $tagIds = $contact->tags->pluck('id')->all();
 
             foreach ($duplicates as $dup) {
@@ -1023,11 +1024,13 @@ class ContactsController extends Controller
             'name'                 => ['required', 'string', 'max:255'],
             'email'                => ['nullable', 'email', 'max:255'],
             'phone'                => ['required', 'string', 'max:50'],
-            'phone_country'        => ['nullable', 'string', 'size:2', 'alpha'],
+            'country'        => ['nullable', 'string', 'size:2', 'alpha'],
             'company'              => ['nullable', 'string', 'max:255'],
             'job_title'            => ['nullable', 'string', 'max:255'],
-'website'              => ['nullable', 'url', 'max:255'],
+            'website'              => ['nullable', 'url', 'max:255'],
             'address'              => ['nullable', 'string', 'max:500'],
+            'area'                 => ['nullable', 'string', 'max:255'],
+            'city'                 => ['nullable', 'string', 'max:255'],
             'birthday'             => ['nullable', 'date'],
             'gender'               => ['nullable', 'in:male,female,others'],
             'lifecycle_stage'      => ['nullable', 'in:lead,prospect,customer,partner,vendor'],
