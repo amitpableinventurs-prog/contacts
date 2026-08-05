@@ -47,8 +47,9 @@ Route::get('/install/finish', [InstallerController::class, 'finish'])->name('ins
 Route::post('/webhooks/twilio/sms', [TwilioWebhookController::class, 'incomingSms'])
     ->middleware('twilio.signature')->name('webhooks.twilio.sms');
 
-// Email tracking pixel (public)
-Route::get('/track/{trackingId}', [TrackingController::class, 'emailPixel'])->name('tracking.email');
+// Email tracking pixel (public) — matches the <img> src emitted in
+// resources/views/emails/contact.blade.php.
+Route::get('/track/email/{trackingId}.gif', [TrackingController::class, 'emailPixel'])->name('tracking.email');
 
 // Public storage files (avatars, branding logos, etc.)
 // On many shared hosts the public/storage symlink cannot be followed by
@@ -269,4 +270,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/workspace/export', [WorkspaceExportController::class, 'show'])->name('workspace.export');
     Route::post('/workspace/export/verify-pin', [WorkspaceExportController::class, 'verifyPin'])->name('workspace.export-pin');
     Route::get('/workspace/export/download', [WorkspaceExportController::class, 'download'])->name('workspace.export-download');
+    Route::get('/workspace/members', [WorkspaceController::class, 'members'])->name('workspace.members');
+    Route::post('/workspace/invite', [WorkspaceController::class, 'invite'])->name('workspace.invite');
+    Route::delete('/workspace/invitations/{invitation}', [WorkspaceController::class, 'revokeInvitation'])->name('workspace.invitations.revoke');
+    Route::delete('/workspace/members/{member}', [WorkspaceController::class, 'removeMember'])->name('workspace.members.remove');
 });
+
+// Team invitations (public — the recipient isn't authenticated yet)
+Route::get('/invitations/{token}', [WorkspaceController::class, 'showInvitation'])->name('invitations.show');
+Route::post('/invitations/{token}/accept', [WorkspaceController::class, 'acceptInvitation'])->name('invitations.accept.post');

@@ -35,7 +35,7 @@ it('marks a reminder complete', function () {
         'remind_at' => now(),
     ]);
 
-    $this->patch(route('reminders.complete', $r))->assertRedirect();
+    $this->post(route('reminders.complete', $r))->assertRedirect();
     expect($r->fresh())
         ->status->toBe('completed')
         ->completed_at->not->toBeNull();

@@ -8,7 +8,7 @@ beforeEach(function () {
 
 it('lets a user start the 2FA setup', function () {
     $this->actingAs($this->user)
-        ->post('/profile/two-factor/enable')
+        ->post('/two-factor')
         ->assertRedirect(route('two-factor.show'));
 
     $this->user->refresh();
@@ -24,7 +24,7 @@ it('confirms 2FA when a valid OTP is supplied', function () {
     $code = TwoFactor::engine()->getCurrentOtp(TwoFactor::secret($this->user));
 
     $this->actingAs($this->user)
-        ->post('/profile/two-factor/confirm', ['code' => $code])
+        ->post('/two-factor/confirm', ['code' => $code])
         ->assertRedirect(route('two-factor.show'));
 
     $this->user->refresh();
@@ -36,7 +36,7 @@ it('rejects an invalid OTP', function () {
     $this->user->refresh();
 
     $this->actingAs($this->user)
-        ->post('/profile/two-factor/confirm', ['code' => '000000'])
+        ->post('/two-factor/confirm', ['code' => '000000'])
         ->assertSessionHasErrors('code');
 
     expect($this->user->fresh()->two_factor_confirmed_at)->toBeNull();
@@ -47,7 +47,7 @@ it('disables 2FA and clears the secret', function () {
     $this->user->forceFill(['two_factor_confirmed_at' => now()])->save();
 
     $this->actingAs($this->user)
-        ->delete('/profile/two-factor')
+        ->delete('/two-factor')
         ->assertRedirect(route('two-factor.show'));
 
     $this->user->refresh();
