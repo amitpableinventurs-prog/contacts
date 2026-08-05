@@ -51,7 +51,7 @@
             </x-ui.card-content>
         </x-ui.card>
 
-        @php $canDeleteLogs = auth()->user()->hasRole(\App\Support\Roles::SUPER_ADMIN, \App\Support\Roles::ADMIN); @endphp
+        @php $canDeleteLogs = auth()->user()->isSuperAdmin(); @endphp
 
         <form method="POST" action="{{ route('activity-logs.delete') }}"
               onsubmit="return confirm('Delete selected log entries? This cannot be undone.')"
