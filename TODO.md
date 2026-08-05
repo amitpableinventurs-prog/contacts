@@ -1,20 +1,18 @@
-# TODO - Contacts List & Details Layout Changes
+# TODO: Fix 404 error when uploading DP (display picture)
 
-## Completed
+## Root Cause
+The `public/storage` symlink is broken/missing. Uploaded DP images are stored via the `public` disk (to `storage/app/public/`), but the web server serves them from `public/storage/` which is a **real directory** (not a symlink to `storage/app/public`). Since `storage/app/public` doesn't exist, uploaded photos can never be served → 404.
 
-- [x] **DP image upload fix** — Added missing `</div>` in `_form.blade.php` photo upload wrapper
-- [x] **Website field** — Added open/visible Website input between City and Birthday in `_form.blade.php`
-- [x] **Area field** — Added Area field (migration, model, validation, form, show, import, export)
-- [x] **Contacts list (results) columns** — `index.blade.php`:
-  - Kept: Name, Category, Tags
-  - Added: City (with Area subtext), Added date (date + time)
-  - Removed: Company, Added by, Approved by
-- [x] **Contact details** — `show.blade.php`:
-  - Renamed "Owner" label to "Added by"
-  - Added "Approved by" display
-  - Kept "Created" date
+## Steps
 
-## Verification
-- [x] Migration ran successfully (`2026_07_22_000001_add_area_to_contacts_table`)
-- [x] Blade views compile without errors (`php artisan view:cache`)
+- [x] Analyze codebase and confirm root cause
+- [x] Inspect contents of `public/storage` (existing files to preserve)
+- [x] Create `storage/app/public` directory
+- [x] Move existing files from `public/storage/` into `storage/app/public/`
+- [x] Remove the real `public/storage` directory
+- [x] Create a directory junction `public/storage` → `storage/app/public`
+- [x] Add `StorageFileController` + `/storage/{path}` route as a fallback for
+      hosts where the symlink/junction isn't followed (e.g. symlink() disabled
+      on shared hosting) — covered by `tests/Feature/StorageFileTest.php`
+- [x] Verify the fix (structure + storage:link behavior; full test suite green)
 

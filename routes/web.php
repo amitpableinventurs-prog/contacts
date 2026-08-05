@@ -19,6 +19,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RemindersController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SmsController;
+use App\Http\Controllers\StorageFileController;
 use App\Http\Controllers\TagsController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TrackingController;
@@ -49,6 +50,12 @@ Route::post('/webhooks/twilio/sms', [TwilioWebhookController::class, 'incomingSm
 // Email tracking pixel (public)
 Route::get('/track/{trackingId}', [TrackingController::class, 'emailPixel'])->name('tracking.email');
 
+// Public storage files (avatars, branding logos, etc.)
+// On many shared hosts the public/storage symlink cannot be followed by
+// Apache, so requests fall through to the front controller. This route
+// catches them and streams the file from disk. It's a controller (not a
+// closure) so it survives `route:cache`.
+Route::get('/storage/{path}', [StorageFileController::class, 'show'])->where('path', '.*')->name('storage.public');
 
 // Root → dashboard; guests get bounced to login by the auth middleware.
 // Kept closure-free so the cached route survives serialization everywhere.

@@ -15,7 +15,7 @@ class Contact extends Model
 
     protected $fillable = [
         'team_id', 'group_id', 'owner_id',
-        'name', 'email', 'phone', 'phone_digits', 'phone_country',
+        'name', 'email', 'phone', 'phone_digits', 'country',
         'company', 'job_title', 'website', 'address', 'city', 'area',
         'photo', 'birthday', 'gender', 'lifecycle_stage',
         'facebook', 'twitter', 'linkedin',
@@ -53,6 +53,21 @@ class Contact extends Model
         $digits = preg_replace('/\D/', '', (string) $phone);
 
         return $digits === '' ? null : $digits;
+    }
+
+    /** Other contacts in the same team sharing this contact's email or phone. */
+    public function potentialDuplicates(): \Illuminate\Database\Eloquent\Builder
+    {
+        return static::where('team_id', $this->team_id)
+            ->where('id', '!=', $this->id)
+            ->where(function ($q) {
+                if ($this->email) {
+                    $q->orWhere('email', $this->email);
+                }
+                if ($this->phone) {
+                    $q->orWhere('phone', $this->phone);
+                }
+            });
     }
 
     public function isPending(): bool   { return $this->approval_status === 'pending'; }

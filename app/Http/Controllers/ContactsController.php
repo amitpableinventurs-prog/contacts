@@ -20,6 +20,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -75,86 +76,109 @@ class ContactsController extends Controller
         $user->increment('searches_used');
     }
 
+    private function applyPhoneSearchFilter(Builder $query, string $search): void
+    {
+        $digits = Contact::normalizePhone($search);
+
+        $query->where(function (Builder $sub) use ($search, $digits) {
+            if ($digits !== null) {
+                $sub->where('phone_digits', 'like', "%{$digits}%");
+            }
+
+            $sub->orWhere('phone', 'like', "%{$search}%")
+                ->orWhere('number', 'like', "%{$search}%");
+        });
+    }
+
     // ------------------------------------------------------------------
     // List
     // ------------------------------------------------------------------
 
     public function index(Request $request): View
-    {
-        Gate::authorize('viewAny', Contact::class);
+{
+    Gate::authorize('viewAny', Contact::class);
 
-        $user    = Auth::user();
-        $teamId  = $user->current_team_id;
-        $isClerk = $user->isClerk();
-        // Manager lost the advanced filters (free-text/group/tags) and is
-        // limited to the same phone-number search as Clerk; only Admin+
-        // keeps the full filter bar. Manager still browses/paginates the
-        // full list, unlike Clerk (see $clerkSearched below).
-        $hasAdvancedSearch = $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
+    $user              = Auth::user();
+    $teamId            = $user->current_team_id;
+    $isClerk           = $user->isClerk();
+    $isManager         = $user->isManager();
+    $hasAdvancedSearch = $user->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN);
 
-        $perPage = 25;
+    $perPage = 25;
 
-        $query = Contact::where('team_id', $teamId)->with(['group', 'tags', 'owner', 'approvedBy']);
+    $query = Contact::where('team_id', $teamId)->with(['group', 'tags', 'owner', 'approvedBy']);
 
-        $number = trim((string) $request->input('number'));
+    // 1. Unified Search Input: Check both 'number' and 'q' inputs
+    $number = trim((string) ($request->input('number') ?? $request->input('q')));
 
-        // Require a meaningful fragment from clerks so a one-digit search
-        // can't page through the whole workspace.
-        if ($isClerk && strlen($number) < 6) {
-            $number = '';
-        }
+    // 2. Minimum length check for Clerks (At least 3-4 digits instead of strict 6)
+    $minSearchLength = 3;
+    $isValidSearch   = strlen($number) >= $minSearchLength;
 
-        // Only Admin+ gets free-text search plus group/tag filters.
-        if ($hasAdvancedSearch) {
-            if ($q = trim((string) $request->input('q'))) {
-                $query->where(function ($sub) use ($q) {
-                    $sub->where('name',    'like', "%{$q}%")
-                        ->orWhere('email',   'like', "%{$q}%")
-                        ->orWhere('phone',   'like', "%{$q}%")
-                        ->orWhere('company', 'like', "%{$q}%")
-                        ->orWhere('city',    'like', "%{$q}%")
-                        ->orWhere('area',    'like', "%{$q}%");
-                });
-            }
-            if ($groupId = $request->input('group_id')) {
-                $query->where('group_id', $groupId);
-            }
-            if ($tagIds = $request->input('tags')) {
-                foreach ((array) $tagIds as $tagId) {
-                    $query->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId));
-                }
-            }
-        }
-
-        if ($number !== '') {
-            $query->where(function ($q) use ($number) {
-                $q->where('phone', 'like', "%{$number}%")
-                  ->orWhere('number', 'like', "%{$number}%");
-            });
-        } elseif ($isClerk) {
-            $query->whereRaw('1 = 0');
-        }
-
-        $this->scopeVisibleContactsForList($query, $user);
-
-        $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
-        $groups       = $hasAdvancedSearch ? Group::where('team_id', $teamId)->orderBy('name')->get() : collect();
-        $tags         = $hasAdvancedSearch ? Tag::where('team_id', $teamId)->orderBy('name')->get() : collect();
-        $pendingCount = Gate::allows('approve-contacts') ? Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count() : 0;
-        $clerkSearched = ! $isClerk || $number !== '';
-
-        if ($isClerk && $number !== '') {
-            $this->rememberClerkSearch($number, $contacts->first());
-        }
-
-        // Persist search count/history for Clerk and Manager so Admin/Super Admin
-        // can review it later (see Team pages / logSearch()).
-        if (($isClerk || $user->isManager()) && $number !== '') {
-            $this->logSearch($user, $number, $contacts->total());
-        }
-
-        return view('contacts.index', compact('contacts', 'groups', 'tags', 'pendingCount', 'user', 'clerkSearched', 'hasAdvancedSearch'));
+    if ($isClerk && !$isValidSearch) {
+        $number = '';
     }
+
+    // 3. Admin / Super Admin Filters (Free-text + Group + Tags)
+    if ($hasAdvancedSearch) {
+        if ($q = trim((string) $request->input('q'))) {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name',     'like', "%{$q}%")
+                    ->orWhere('email',   'like', "%{$q}%")
+                    ->orWhere('phone',   'like', "%{$q}%")
+                    ->orWhere('company', 'like', "%{$q}%")
+                    ->orWhere('city',    'like', "%{$q}%")
+                    ->orWhere('area',    'like', "%{$q}%");
+            });
+        }
+        if ($groupId = $request->input('group_id')) {
+            $query->where('group_id', $groupId);
+        }
+        if ($tagIds = $request->input('tags')) {
+            foreach ((array) $tagIds as $tagId) {
+                $query->whereHas('tags', fn ($t) => $t->where('tags.id', $tagId));
+            }
+        }
+    }
+
+    // 4. Phone Number Search Filter for Clerks & Managers
+    if ($number !== '') {
+        $this->applyPhoneSearchFilter($query, $number);
+    } elseif ($isClerk) {
+        // Bina Search ke Clerks poori workspace browse nahi kar sakte
+        $query->whereRaw('1 = 0');
+    }
+
+    // Scope visible contacts logic
+    $this->scopeVisibleContactsForList($query, $user);
+
+    $contacts     = $query->orderBy('name')->paginate($perPage)->withQueryString();
+    $groups       = $hasAdvancedSearch ? Group::where('team_id', $teamId)->orderBy('name')->get() : collect();
+    $tags         = $hasAdvancedSearch ? Tag::where('team_id', $teamId)->orderBy('name')->get() : collect();
+    $pendingCount = Gate::allows('approve-contacts') ? Contact::where('team_id', $teamId)->where('approval_status', 'pending')->count() : 0;
+    
+    $clerkSearched = ! $isClerk || $number !== '';
+
+    // Log Clerk Search Details
+    if ($isClerk && $number !== '') {
+        $this->rememberClerkSearch($number, $contacts->first());
+    }
+
+    // Log search history for Clerk and Manager
+    if (($isClerk || $isManager) && $number !== '') {
+        $this->logSearch($user, $number, $contacts->total());
+    }
+
+    return view('contacts.index', compact(
+        'contacts', 
+        'groups', 
+        'tags', 
+        'pendingCount', 
+        'user', 
+        'clerkSearched', 
+        'hasAdvancedSearch'
+    ));
+}
 
     // ------------------------------------------------------------------
     // Autocomplete (JSON)
@@ -174,17 +198,31 @@ class ContactsController extends Controller
             return response()->json([]);
         }
 
+        $digits = Contact::normalizePhone($q);
+
         return response()->json(
             tap(Contact::where('team_id', $teamId), fn ($query) => $this->scopeVisibleContactsForList($query, $user))
-                ->where(fn ($query) => $isClerk
-                    ? $query
-                        ->where('phone', 'like', "%{$q}%")
-                        ->orWhere('number', 'like', "%{$q}%")
-                    : $query
-                        ->where('name', 'like', "%{$q}%")
-                        ->orWhere('phone', 'like', "%{$q}%")
-                        ->orWhere('email', 'like', "%{$q}%")
-                )
+                ->where(function ($query) use ($isClerk, $q, $digits) {
+                    if ($isClerk) {
+                        if ($digits !== null) {
+                            $query->where('phone_digits', 'like', "%{$digits}%");
+                        }
+
+                        $query->orWhere('phone', 'like', "%{$q}%")
+                              ->orWhere('number', 'like', "%{$q}%");
+
+                        return;
+                    }
+
+                    $query->where('name', 'like', "%{$q}%")
+                          ->orWhere('phone', 'like', "%{$q}%")
+                          ->orWhere('email', 'like', "%{$q}%")
+                          ->orWhere('number', 'like', "%{$q}%");
+
+                    if ($digits !== null) {
+                        $query->orWhere('phone_digits', 'like', "%{$digits}%");
+                    }
+                })
                 ->orderBy('name')
                 ->limit(10)
                 ->get(['id', 'name', 'phone', 'email'])
@@ -329,17 +367,7 @@ class ContactsController extends Controller
         $activity = $contact->messages()->latest('created_at')->limit(50)->get();
         $emails   = $contact->emails()->latest('created_at')->limit(50)->get();
 
-        $duplicateCount = Contact::where('team_id', $contact->team_id)
-            ->where('id', '!=', $contact->id)
-            ->where(function ($q) use ($contact) {
-                if ($contact->email) {
-                    $q->orWhere('email', $contact->email);
-                }
-                if ($contact->phone) {
-                    $q->orWhere('phone', $contact->phone);
-                }
-            })
-            ->count();
+        $duplicateCount = $contact->potentialDuplicates()->count();
 
         return view('contacts.show', compact('contact', 'activity', 'emails', 'duplicateCount'));
     }
@@ -362,60 +390,66 @@ class ContactsController extends Controller
         return view('contacts.edit', compact('contact', 'groups', 'tags', 'pendingEdit'));
     }
 
-    public function update(Request $request, Contact $contact): RedirectResponse
-    {
-        if (! Gate::allows('update', $contact)) {
-            Gate::authorize('updateNotes', $contact);
+   public function update(Request $request, Contact $contact): RedirectResponse
+{
+    if (! Gate::allows('update', $contact)) {
+        Gate::authorize('updateNotes', $contact);
 
-            $notes = $request->validate(['notes' => ['nullable', 'string']])['notes'] ?? null;
-            $contact->update(['notes' => $notes]);
+        $notes = $request->validate(['notes' => ['nullable', 'string']])['notes'] ?? null;
+        $contact->update(['notes' => $notes]);
 
-            ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name, 'field' => 'notes']);
-
-            return redirect()->route('contacts.show', $contact)
-                ->with('toast', ['type' => 'success', 'message' => 'Notes updated.']);
-        }
-
-        $data = $this->validateContact($request);
-
-        // Manager can fill out the full edit form, but the changes are held
-        // for Admin/Super Admin approval rather than applied immediately.
-        if (! Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN)) {
-            return $this->queueEditRequest($request, $contact, $data);
-        }
-
-        // Track which fields changed for edit history.
-        $trackFields = ['name','email','phone','company','job_title','website','address','city','area','notes','description_html'];
-        $changed = [];
-        foreach ($trackFields as $field) {
-            $old = $contact->$field;
-            $new = $data[$field] ?? null;
-            if ((string) $old !== (string) $new) {
-                $changed[$field] = [
-                    'from' => $this->safeUtf8((string) ($old ?? '')),
-                    'to'   => $this->safeUtf8((string) ($new ?? '')),
-                ];
-            }
-        }
-
-        // Scrub invalid UTF-8 bytes that may have come from old Windows-1252 imports.
-        foreach ($data as $k => $v) {
-            if (is_string($v)) {
-                $data[$k] = mb_convert_encoding($v, 'UTF-8', 'UTF-8');
-            }
-        }
-
-        $contact->update($data);
-        $this->handlePhoto($request, $contact);
-        $contact->tags()->sync($request->input('tags', []));
-
-        $this->recordEditHistory($contact, Auth::id(), $changed);
-
-        ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name]);
+        ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name, 'field' => 'notes']);
 
         return redirect()->route('contacts.show', $contact)
-            ->with('toast', ['type' => 'success', 'message' => 'Contact updated.']);
+            ->with('toast', ['type' => 'success', 'message' => 'Notes updated.']);
     }
+
+    $data = $this->validateContact($request);
+
+    // Manager approval check...
+    if (! Auth::user()->hasRole(Roles::SUPER_ADMIN, Roles::ADMIN)) {
+        return $this->queueEditRequest($request, $contact, $data);
+    }
+
+    // Track which fields changed for edit history
+    $trackFields = ['name','email','phone','company','job_title','website','address','city','area','notes','description_html'];
+    $changed = [];
+    foreach ($trackFields as $field) {
+        $old = $contact->$field;
+        $new = $data[$field] ?? null;
+        if ((string) $old !== (string) $new) {
+            $changed[$field] = [
+                'from' => $this->safeUtf8((string) ($old ?? '')),
+                'to'   => $this->safeUtf8((string) ($new ?? '')),
+            ];
+        }
+    }
+
+    // 1. Remove photo key from $data so it doesn't overwrite the DB column with a file object/null
+    unset($data['photo']);
+
+    // Scrub invalid UTF-8 bytes
+    foreach ($data as $k => $v) {
+        if (is_string($v)) {
+            $data[$k] = mb_convert_encoding($v, 'UTF-8', 'UTF-8');
+        }
+    }
+
+    // 2. Update model fields WITHOUT touching 'photo'
+    $contact->update($data);
+
+    // 3. Handle photo upload and update DB column with the clean stored path
+    $this->handlePhoto($request, $contact);
+
+    $contact->tags()->sync($request->input('tags', []));
+
+    $this->recordEditHistory($contact, Auth::id(), $changed);
+
+    ActivityLogger::log('contact.updated', $contact, ['name' => $contact->name]);
+
+    return redirect()->route('contacts.show', $contact)
+        ->with('toast', ['type' => 'success', 'message' => 'Contact updated.']);
+}
 
     /**
      * Manager proposes changes to an existing contact; nothing is applied to
@@ -861,16 +895,7 @@ class ContactsController extends Controller
     {
         Gate::authorize('manage', $contact);
 
-        $phone = $contact->phone;
-
-        $duplicates = Contact::where('team_id', $contact->team_id)
-            ->where('id', '!=', $contact->id)
-            ->where(function ($q) use ($contact, $phone) {
-                if ($contact->email) $q->orWhere('email', $contact->email);
-                if ($phone) $q->orWhere('phone', $phone);
-            })
-            ->with('tags')
-            ->get();
+        $duplicates = $contact->potentialDuplicates()->with('tags')->get();
 
         return view('contacts.merge', compact('contact', 'duplicates'));
     }

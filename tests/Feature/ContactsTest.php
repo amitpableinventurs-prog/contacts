@@ -127,12 +127,14 @@ it('lets admin approve a manager-created contact and removes it from manager lis
         ->assertDontSee('Approval Needed');
 });
 
-it('shows added and approved user names in the contacts table', function () {
+it('shows added and approved user names on the contact detail page', function () {
+    // The contacts list table doesn't carry these columns (dropped in favor of
+    // City/Added date) — this info lives on the individual contact page instead.
     $manager = makeManagerOnTeam($this->user->current_team_id);
     $manager->forceFill(['name' => 'Manager Added User'])->save();
     $this->user->forceFill(['name' => 'Admin Approved User'])->save();
 
-    Contact::factory()->create([
+    $contact = Contact::factory()->create([
         'team_id' => $this->user->current_team_id,
         'owner_id' => $manager->id,
         'name' => 'Visible Approved Contact',
@@ -141,7 +143,7 @@ it('shows added and approved user names in the contacts table', function () {
         'approved_at' => now(),
     ]);
 
-    $this->get(route('contacts.index'))
+    $this->get(route('contacts.show', $contact))
         ->assertOk()
         ->assertSee('Added by')
         ->assertSee('Approved by')
@@ -195,11 +197,11 @@ it('shows a contact', function () {
     $this->get(route('contacts.show', $c))->assertOk()->assertSee($c->name);
 });
 
-it('hides contacts from another team (404 via global scope)', function () {
+it('hides contacts from another team (403 via policy)', function () {
     $other = makeUser();
     $foreign = Contact::factory()->create(['team_id' => $other->current_team_id]);
-    // Global team scope means the contact effectively does not exist for this user.
-    $this->get('/contacts/'.$foreign->id)->assertNotFound();
+    // ContactPolicy::view() denies cross-team access, which Laravel turns into a 403.
+    $this->get('/contacts/'.$foreign->id)->assertForbidden();
 });
 
 it('updates a contact', function () {
@@ -268,6 +270,26 @@ it('shows banned contacts in clerk search and admin search', function () {
     // Admin still finds the banned contact to manage the blacklist.
     $this->actingAs($this->user);
     $this->get('/contacts?number=9503466923')->assertOk()->assertSee('Blocked Person');
+});
+
+it('lets clerks search by formatted phone number', function () {
+    Contact::factory()->create([
+        'team_id' => $this->user->current_team_id,
+        'name'    => 'Formatted Contact',
+        'phone'   => '+1 (555) 123-4567',
+    ]);
+
+    $clerk = makeClerkOnTeam($this->user->current_team_id);
+
+    $this->actingAs($clerk)
+        ->get('/contacts?number=5551234567')
+        ->assertOk()
+        ->assertSee('Formatted Contact');
+
+    $this->actingAs($clerk)
+        ->get('/contacts?number=1-555-123-4567')
+        ->assertOk()
+        ->assertSee('Formatted Contact');
 });
 
 it('shows the saved address in the edit form textarea', function () {
@@ -353,7 +375,7 @@ it('lets clerks view and add notes', function () {
 
     $this->actingAs($clerk);
 
-    $this->get(route('contacts.show', $contact))->assertOk()->assertSee('Add note');
+    $this->get(route('contacts.show', $contact))->assertOk()->assertSee('Add or edit your notes');
 
     $this->post(route('contacts.notes.store', $contact), [
         'note_html' => 'Spoke on the phone, call back tomorrow.',
@@ -364,7 +386,7 @@ it('lets clerks view and add notes', function () {
         ->and($note->note_html)->toBe('Spoke on the phone, call back tomorrow.');
 });
 
-it('lets clerks edit contact details without changing status', function () {
+it('blocks clerks from editing contact fields via update (notes only)', function () {
     $contact = Contact::factory()->create([
         'team_id' => $this->user->current_team_id,
         'name' => 'Original Name',
@@ -377,6 +399,8 @@ it('lets clerks edit contact details without changing status', function () {
 
     $this->get(route('contacts.edit', $contact))->assertOk()->assertSee('Save changes');
 
+    // ContactPolicy::update() requires Manager+, so a clerk's PUT falls through to
+    // the updateNotes-only branch — name/status are left untouched.
     $this->put(route('contacts.update', $contact), [
         'name' => 'Updated By Clerk',
         'phone' => '9503466923',
@@ -384,7 +408,7 @@ it('lets clerks edit contact details without changing status', function () {
     ])->assertRedirect(route('contacts.show', $contact));
 
     $contact->refresh();
-    expect($contact->name)->toBe('Updated By Clerk')
+    expect($contact->name)->toBe('Original Name')
         ->and($contact->status)->toBe('active');
 });
 

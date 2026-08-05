@@ -17,7 +17,7 @@ class ContactsApiController extends Controller
     {
         Gate::authorize('viewAny', Contact::class);
 
-        $query = Contact::query()->with(['group', 'tags']);
+        $query = Contact::where('team_id', $request->user()->current_team_id)->with(['group', 'tags']);
 
         if ($q = $request->string('q')->toString()) {
             $query->where(function ($w) use ($q) {
@@ -43,6 +43,7 @@ class ContactsApiController extends Controller
         $tagIds = $data['tags'] ?? [];
         unset($data['tags']);
         $data['owner_id'] = $request->user()->id;
+        $data['team_id'] = $request->user()->current_team_id;
 
         $contact = Contact::create($data);
         $contact->tags()->sync($tagIds);
