@@ -5,16 +5,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Never run two deploys at once; queue instead.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
-    name: SSH Deploy (hyd691.com)
+    name: SSH Deploy (emplogin.com)
     runs-on: ubuntu-latest
-    # Never run two hyd691.com deploys at once; queue instead. Independent
-    # of the emplogin.com job below — a stuck deploy on one host must not
-    # block the other.
-    concurrency:
-      group: production-deploy-hyd691
-      cancel-in-progress: false
 
     steps:
       - name: Deploy via SSH
@@ -24,76 +23,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          command_timeout: 20m
-          script: |
-            set -e
-
-            DEPLOY_PATH="$HOME/public_html/new_contacts"
-
-            echo "==> Pulling latest code..."
-            cd "$DEPLOY_PATH"
-            git pull origin main
-
-            echo "==> Routing requests through public/..."
-            cp public_htaccess .htaccess
-
-            echo "==> Installing PHP dependencies..."
-            # This server has no composer at all; keep a composer.phar in
-            # ~/bin (downloaded once) and run it through php.
-            if command -v composer >/dev/null 2>&1; then
-              COMPOSER_BIN="$(command -v composer)"
-            else
-              COMPOSER_BIN="$HOME/bin/composer"
-              if [ ! -f "$COMPOSER_BIN" ]; then
-                echo "composer missing — downloading composer.phar..."
-                mkdir -p "$HOME/bin"
-                curl -fsS -o "$COMPOSER_BIN" https://getcomposer.org/download/latest-stable/composer.phar
-              fi
-            fi
-            php -d memory_limit=-1 "$COMPOSER_BIN" install --no-dev --optimize-autoloader --no-interaction
-
-            echo "==> Running migrations..."
-            php artisan migrate --force
-
-            echo "==> Refreshing caches..."
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:clear
-
-            echo "==> Linking storage..."
-            php artisan storage:link --force 2>/dev/null || true
-
-            # The install wizard is gated on this lock file. If it's missing
-            # but the DB already has users, the app was installed before the
-            # file went missing (e.g. fresh clone) — restore it.
-            if [ ! -f storage/app/installed.lock ]; then
-              USERS=$(php artisan tinker --execute='echo \App\Models\User::count();' 2>/dev/null | tail -1)
-              if [ "$USERS" -ge 1 ] 2>/dev/null; then
-                printf '{"installed_at":"%s","admin":"restored-by-deploy","version":"2.0"}\n' "$(date -Iseconds)" > storage/app/installed.lock
-                echo "==> Restored installed.lock ($USERS users in DB)"
-              fi
-            fi
-
-            echo "==> Restarting PHP workers (clears opcache)..."
-            pkill -u "$(whoami)" lsphp 2>/dev/null || true
-
-            echo "==> Deployed $(git rev-parse --short HEAD) successfully."
-
-  deploy-emplogin:
-    name: SSH Deploy (emplogin.com)
-    runs-on: ubuntu-latest
-    concurrency:
-      group: production-deploy-emplogin
-      cancel-in-progress: false
-
-    steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST_EMPLOGIN }}
-          username: ${{ secrets.SSH_USERNAME_EMPLOGIN }}
-          key: ${{ secrets.SSH_PRIVATE_KEY_EMPLOGIN }}
-          port: ${{ secrets.SSH_PORT_EMPLOGIN }}
           command_timeout: 20m
           script: |
             set -e
